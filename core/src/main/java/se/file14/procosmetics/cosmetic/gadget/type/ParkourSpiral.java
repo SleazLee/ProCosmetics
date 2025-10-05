@@ -13,6 +13,7 @@ import se.file14.procosmetics.util.FastMathUtil;
 import se.file14.procosmetics.util.LocationUtil;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.material.Materials;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -44,10 +45,8 @@ public class ParkourSpiral implements GadgetBehavior {
     public InteractionResult onInteract(CosmeticContext<GadgetType> context, @Nullable Block clickedBlock, @Nullable Vector clickedPosition) {
         placeBlock(context, step++);
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationInTicks()
-        );
+        Location scheduleLocation = centerLocation != null ? centerLocation : context.getPlayer().getLocation();
+        Scheduler.runLater(scheduleLocation, () -> onUnequip(context), context.getType().getDurationInTicks());
         return InteractionResult.SUCCESS;
     }
 

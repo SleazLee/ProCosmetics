@@ -40,6 +40,7 @@ import se.file14.procosmetics.treasure.TreasureChestPlatformImpl;
 import se.file14.procosmetics.user.UserManagerImpl;
 import se.file14.procosmetics.util.LogUtil;
 import se.file14.procosmetics.util.ResourceExporter;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.block.FakeBlockManager;
 import se.file14.procosmetics.util.version.VersionUtil;
 import se.file14.procosmetics.worldguard.WorldGuardManager;
@@ -82,8 +83,6 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
     public void onLoad() {
         ProCosmeticsPlugin.plugin = this;
         logger = getLogger();
-        syncExecutor = runnable -> getServer().getScheduler().runTask(this, runnable);
-        ayncExecutor = runnable -> getServer().getScheduler().runTaskAsynchronously(this, runnable);
         disabling = false;
 
         if (!VersionUtil.isSupported()) {
@@ -95,6 +94,9 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
         ResourceExporter.export(this);
 
         configManager = new ConfigManagerImpl(this);
+        Scheduler.init(this);
+        syncExecutor = Scheduler::run;
+        ayncExecutor = Scheduler::runAsync;
         languageManager = new LanguageManagerImpl(this);
         nmsManager = new NMSManagerImpl(this);
 
@@ -160,7 +162,9 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
             platform.getHologram().despawn();
         }
         HandlerList.unregisterAll(this);
-        getServer().getScheduler().cancelTasks(this);
+        if (!Scheduler.isFolia()) {
+            getServer().getScheduler().cancelTasks(this);
+        }
 
         if (adventure != null) {
             adventure.close();
@@ -244,7 +248,7 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
 
     private void checkUpdate() {
         if (configManager.getMainConfig().getBoolean("settings.check_updates")) {
-            getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            Scheduler.runAsync(() -> {
                 try {
                     URLConnection urlConnection = URI.create("https://api.spigotmc.org/legacy/update.php?resource=49106").toURL().openConnection();
                     urlConnection.setConnectTimeout(1000);

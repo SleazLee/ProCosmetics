@@ -15,6 +15,7 @@ import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.RGBFade;
 import se.file14.procosmetics.util.material.Materials;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 
@@ -45,10 +46,7 @@ public class DiscoBall implements GadgetBehavior {
         nmsEntity.setPositionRotation(location.add(0.0d, HEIGHT_OFFSET, 0.0d));
         nmsEntity.getTracker().startTracking();
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationInTicks()
-        );
+        Scheduler.runLater(location, () -> onUnequip(context), context.getType().getDurationInTicks());
         return InteractionResult.SUCCESS;
     }
 
