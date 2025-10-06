@@ -11,6 +11,10 @@ dependencies {
     implementation("com.zaxxer:HikariCP:7.0.2")
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
     implementation("org.bstats:bstats-bukkit:3.1.0")
+
+    // Utility libraries
+    implementation("commons-lang:commons-lang:2.6")
+    compileOnly("com.mojang:authlib:1.5.25")
     
     implementation("net.kyori:adventure-api:4.24.0")
     implementation("net.kyori:adventure-text-minimessage:4.24.0")
