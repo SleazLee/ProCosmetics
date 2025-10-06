@@ -1,9 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.attributes.Attribute
 import org.apache.tools.ant.filters.ReplaceTokens
 import java.io.File
 import se.file14.procosmetics.gradle.VersionedObfTask
 import se.file14.procosmetics.gradle.ensurePaperDevBundleExtracted
+import se.file14.procosmetics.gradle.ensurePaperDevBundleResources
 
 buildscript {
     repositories {
@@ -116,28 +118,42 @@ subprojects {
         })
     }
 
-    if (extensions.extraProperties.has("remapMinecraftVersion")) {
-        val mcVersion = extensions.extraProperties["remapMinecraftVersion"].toString()
+    val remapMinecraftVersion = findProperty("remapMinecraftVersion")?.toString()
+    if (remapMinecraftVersion != null) {
+        extensions.extraProperties["remapMinecraftVersion"] = remapMinecraftVersion
+
+        val mcVersion = remapMinecraftVersion
+        val devBundleAttribute = Attribute.of("io.papermc.paperweight.dev-bundle-output", String::class.java)
+
         val paperDevBundle by configurations.creating {
             isCanBeConsumed = false
             isCanBeResolved = true
+            attributes.attribute(devBundleAttribute, "zip")
         }
 
         dependencies {
             add(paperDevBundle.name, "io.papermc.paper:dev-bundle:$mcVersion-R0.1-SNAPSHOT")
         }
 
-        val mojangJarProvider = paperDevBundle.elements.map { elements ->
-            require(elements.size == 1) {
-                "Expected exactly one Paper dev bundle for project ${name}"
-            }
-            val bundleFile = elements.single().asFile
-            val extractedDir = ensurePaperDevBundleExtracted(layout.buildDirectory.get().asFile, mcVersion, bundleFile)
-            extractedDir.resolve("data/paperclip-mojang.jar")
+        val bundleDirProvider = paperDevBundle.elements.map { elements ->
+            val bundleFile = elements
+                .map { it.asFile }
+                .singleOrNull { it.extension == "zip" }
+                ?: error("Could not locate Paper dev bundle zip for project $name")
+            ensurePaperDevBundleExtracted(project.rootProject.layout.projectDirectory.dir(".gradle/paper-dev-bundles").asFile, mcVersion, bundleFile)
         }
 
+        val paperResourcesProvider = bundleDirProvider.map { bundleDir ->
+            ensurePaperDevBundleResources(bundleDir, mcVersion)
+        }
+
+        val mojangJarFiles = project.files(paperResourcesProvider.map { it.mojangJar }).builtBy(paperDevBundle)
+        val paperServerJarFiles = project.files(paperResourcesProvider.map { it.patchedJar }).builtBy(paperDevBundle)
+
         dependencies {
-            add("compileOnly", project.files(mojangJarProvider))
+            add("compileOnly", mojangJarFiles)
+            add("compileOnly", paperServerJarFiles)
+            add("compileOnly", "io.papermc.paper:paper-api:$mcVersion-R0.1-SNAPSHOT")
         }
 
         extensions.extraProperties["paperDevBundleConfig"] = paperDevBundle
