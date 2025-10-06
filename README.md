@@ -78,30 +78,30 @@ Folia-compliant.
 
 #### Shading your Folia-ready NoteBlockAPI fork
 
-1. Build your fork and copy the resulting jar into `libs/NoteBlockAPI-folia.jar` in the repository root (create the
+1. Build your fork and copy the resulting jar into `libs/NoteBlockAPI-1.6.4-SNAPSHOT.jar` in the repository root (create the
    `libs` directory if it does not exist). Keeping the jar in a shared location lets both the Gradle and Maven builds
    reference the same artifact.
 2. Update the Gradle dependencies so every module resolves against the local jar:
    - In `api/build.gradle.kts`, replace the existing NoteBlockAPI `compileOnly` entry with
      ```kotlin
-     compileOnly(files(rootProject.file("libs/NoteBlockAPI-folia.jar")))
+     compileOnly(files(rootProject.file("libs/NoteBlockAPI-1.6.4-SNAPSHOT.jar")))
      ```
    - In `core/build.gradle.kts`, replace the NoteBlockAPI `implementation` entry with
      ```kotlin
-     implementation(files(rootProject.file("libs/NoteBlockAPI-folia.jar")))
+     implementation(files(rootProject.file("libs/NoteBlockAPI-1.6.4-SNAPSHOT.jar")))
      ```
    These statements keep the jar shaded into the final plugin artifact, just like the current remote dependency.
 3. If you use the Maven build, install the jar into your local Maven repository so the `api` and `core` modules can pull
    it in:
    ```bash
-   mvn install:install-file \ 
-     -Dfile=libs/NoteBlockAPI-folia.jar \ 
-     -DgroupId=se.file14.folia \ 
-     -DartifactId=NoteBlockAPI \ 
-     -Dversion=1.6.5-folia \ 
+   mvn install:install-file \
+     -Dfile=libs/NoteBlockAPI-1.6.4-SNAPSHOT.jar \
+     -DgroupId=se.file14.folia \
+     -DartifactId=NoteBlockAPI \
+     -Dversion=1.6.4-SNAPSHOT \
      -Dpackaging=jar
    ```
-   Afterwards, update both `api/pom.xml` and `core/pom.xml` to depend on `se.file14.folia:NoteBlockAPI:1.6.5-folia`
+   Afterwards, update both `api/pom.xml` and `core/pom.xml` to depend on `se.file14.folia:NoteBlockAPI:1.6.4-SNAPSHOT`
    instead of the temporary JitPack coordinate.
 
 ## License
