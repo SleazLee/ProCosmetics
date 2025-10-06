@@ -104,11 +104,11 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
         fakeBlockManager = new FakeBlockManager(this);
         economyManager = new EconomyManagerImpl(this);
         placeholderManager = new PlaceholderManager(this);
-        commandBase = new CommandBase(this);
 
         logger.info("Initializing cosmetics...");
         CosmeticRarityRegistry.load();
         categoryRegistries = new CategoryRegistriesImpl(this);
+        commandBase = new CommandBase(this);
 
         initializeDatabase();
         initializeMetrics();
