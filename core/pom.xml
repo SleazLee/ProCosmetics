@@ -34,9 +34,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.ashtton</groupId>
+            <groupId>se.file14.folia</groupId>
             <artifactId>NoteBlockAPI</artifactId>
-            <version>78f2966ccd</version>
+            <version>1.6.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
