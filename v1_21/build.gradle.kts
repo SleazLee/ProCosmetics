@@ -1,5 +1,4 @@
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
     compileOnly("net.kyori:adventure-api:4.24.0")
     compileOnly("net.kyori:adventure-platform-bukkit:4.4.1")
     compileOnly("com.mojang:authlib:6.0.58")

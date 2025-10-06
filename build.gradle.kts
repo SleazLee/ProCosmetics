@@ -1,11 +1,29 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.apache.tools.ant.filters.ReplaceTokens
+import net.fabricmc.tinyremapper.NonClassCopyMode
+import net.fabricmc.tinyremapper.OutputConsumerPath
+import net.fabricmc.tinyremapper.TinyRemapper
+import net.fabricmc.tinyremapper.TinyUtils
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.tasks.SourceSetContainer
-import procosmetics.build.VersionedObfTask
-import procosmetics.build.ensurePaperDevBundleExtracted
-import procosmetics.build.ensurePaperDevBundleResources
+import org.gradle.api.file.RegularFileProperty
+import org.apache.tools.ant.filters.ReplaceTokens
+import org.gradle.api.provider.Property
+import java.io.BufferedInputStream
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.util.zip.ZipInputStream
+
+buildscript {
+    repositories {
+        mavenCentral()
+        maven(url = "https://repo.papermc.io/repository/maven-public/")
+        maven(url = "https://maven.fabricmc.net/")
+    }
+    dependencies {
+        classpath("net.fabricmc:tiny-remapper:0.12.0")
+    }
+}
 
 plugins {
     java
@@ -107,42 +125,125 @@ subprojects {
         })
     }
 
-    val remapVersion = findProperty("remapMinecraftVersion")?.toString()
-    if (remapVersion != null) {
-        extensions.extraProperties["remapMinecraftVersion"] = remapVersion
+    if (extensions.extraProperties.has("remapMinecraftVersion")) {
+        val mcVersion = extensions.extraProperties["remapMinecraftVersion"].toString()
         val paperDevBundle by configurations.creating {
             isCanBeConsumed = false
             isCanBeResolved = true
-            isTransitive = false
         }
 
         dependencies {
-            add(paperDevBundle.name, "io.papermc.paper:dev-bundle:$remapVersion-R0.1-SNAPSHOT@zip")
+            add(paperDevBundle.name, "io.papermc.paper:dev-bundle:$mcVersion-R0.1-SNAPSHOT")
         }
 
-        val bundleCacheRoot = project.rootProject.layout.projectDirectory.dir(".gradle/paper-dev-bundles").asFile
-        val bundleFile = paperDevBundle.singleFile
-        val extractedDir = ensurePaperDevBundleExtracted(bundleCacheRoot, remapVersion, bundleFile)
-        val paperclipResources = ensurePaperDevBundleResources(extractedDir, remapVersion)
-        val spigotFiles = project.files(paperclipResources.patchedJar)
+        val mojangJarProvider = paperDevBundle.elements.map { elements ->
+            require(elements.size == 1) {
+                "Expected exactly one Paper dev bundle for project ${name}"
+            }
+            val bundleFile = elements.single().asFile
+            val extractedDir = ensurePaperDevBundleExtracted(layout.buildDirectory.get().asFile, mcVersion, bundleFile)
+            extractedDir.resolve("data/paperclip-mojang.jar")
+        }
 
         dependencies {
-            add("compileOnly", spigotFiles)
-        }
-
-        tasks.withType<JavaCompile>().configureEach {
-            classpath = classpath.plus(spigotFiles)
-        }
-
-        extensions.extraProperties["paperclipResources"] = paperclipResources
-
-        project.extensions.getByType(SourceSetContainer::class.java).named("main") {
-            compileClasspath += spigotFiles
+            add("compileOnly", project.files(mojangJarProvider))
         }
 
         extensions.extraProperties["paperDevBundleConfig"] = paperDevBundle
     }
 
+}
+
+// Obfuscation Tasks
+abstract class VersionedObfTask : DefaultTask() {
+
+    @get:Input
+    abstract val minecraftVersion: Property<String>
+
+    @get:Internal
+    val buildDir: File = project.layout.buildDirectory.get().asFile
+
+    @get:InputFile
+    abstract val devBundleZip: RegularFileProperty
+
+    init {
+        group = "jar preparation"
+        description = "Generates an obfuscated version of the jar to use with Paper!"
+        dependsOn("shadowJar")
+    }
+
+    @TaskAction
+    fun obfuscate() {
+        val libsDir = "$buildDir/libs"
+        val projectName = project.name
+        val projectVersion = project.version.toString()
+        val inputJar = Path.of(libsDir, "$projectName-$projectVersion.jar")
+        val obfJar = Path.of(libsDir, "$projectName-$projectVersion-obf.jar")
+
+        val extractedBundleDir = ensurePaperDevBundleExtracted(buildDir, minecraftVersion.get(), devBundleZip.asFile.get())
+        val mappingFile = extractedBundleDir.resolve("data/mojang-spigot-reobf.tiny")
+        val mojangJar = extractedBundleDir.resolve("data/paperclip-mojang.jar")
+
+        require(mappingFile.exists()) {
+            "Could not find Paper mapping file at ${mappingFile.absolutePath}"
+        }
+        require(mojangJar.exists()) {
+            "Could not find Paper mojang-mapped jar at ${mojangJar.absolutePath}"
+        }
+
+        Files.deleteIfExists(obfJar)
+
+        val remapper = TinyRemapper.newRemapper()
+            .withMappings(TinyUtils.createTinyMappingProvider(mappingFile.toPath(), "mojang", "spigot"))
+            .ignoreConflicts(true)
+            .rebuildSourceFilenames(true)
+            .build()
+
+        try {
+            remapper.readClassPath(mojangJar.toPath())
+            remapper.readInputs(inputJar)
+
+            OutputConsumerPath.Builder(obfJar).build().use { outputConsumer ->
+                outputConsumer.addNonClassFiles(inputJar, NonClassCopyMode.FIX_META_INF, remapper)
+                remapper.apply(outputConsumer)
+            }
+        } finally {
+            remapper.finish()
+        }
+
+        Files.move(obfJar, inputJar, StandardCopyOption.REPLACE_EXISTING)
+    }
+
+}
+
+private fun ensurePaperDevBundleExtracted(buildDir: File, minecraftVersion: String, bundleFile: File): File {
+    val targetDir = File(buildDir, "paper-dev-bundles/$minecraftVersion")
+    val mappingFile = File(targetDir, "data/mojang-spigot-reobf.tiny")
+
+    if (mappingFile.exists() && mappingFile.lastModified() >= bundleFile.lastModified()) {
+        return targetDir
+    }
+
+    if (targetDir.exists()) {
+        targetDir.deleteRecursively()
+    }
+    targetDir.mkdirs()
+
+    ZipInputStream(BufferedInputStream(bundleFile.inputStream())).use { zip ->
+        var entry = zip.nextEntry
+        while (entry != null) {
+            if (!entry.isDirectory && (entry.name == "data/mojang-spigot-reobf.tiny" || entry.name == "data/paperclip-mojang.jar")) {
+                val outputFile = File(targetDir, entry.name)
+                outputFile.parentFile?.mkdirs()
+                outputFile.outputStream().use { out ->
+                    zip.copyTo(out)
+                }
+            }
+            entry = zip.nextEntry
+        }
+    }
+
+    return targetDir
 }
 
 subprojects.forEach { subproject ->
