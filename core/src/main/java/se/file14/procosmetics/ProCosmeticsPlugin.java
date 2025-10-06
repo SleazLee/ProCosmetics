@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URLConnection;
+import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -137,7 +138,7 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
         hookPlugins();
         checkUpdate();
 
-        NoteBlockAPI.initializeAPI(this);
+        initializeNoteBlockAPI();
         ProCosmeticsProvider.register(this);
 
         userManager.loadOnlinePlayers();
@@ -170,7 +171,7 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
             adventure.close();
             adventure = null;
         }
-        NoteBlockAPI.getAPI().onDisable(this);
+        shutdownNoteBlockAPI();
     }
 
     private void initializeDatabase() {
@@ -199,6 +200,72 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
                 new ToggleSelfViewCommand(this),
                 new ProCosmeticsCommand(this)
         );
+    }
+
+    private void initializeNoteBlockAPI() {
+        if (tryInvokeStatic(NoteBlockAPI.class, "initializeAPI")) {
+            return;
+        }
+        if (tryInvokeStatic(NoteBlockAPI.class, "initializeAPI", new Class<?>[]{JavaPlugin.class}, this)) {
+            return;
+        }
+        if (tryInvokeStatic(NoteBlockAPI.class, "initialize", new Class<?>[]{JavaPlugin.class}, this)) {
+            return;
+        }
+
+        logger.warning("Unable to locate a compatible NoteBlockAPI initialization method; continuing without explicit init.");
+    }
+
+    private void shutdownNoteBlockAPI() {
+        Object api = NoteBlockAPI.getAPI();
+        if (api == null) {
+            return;
+        }
+
+        if (tryInvokeInstance(api, "onDisable")) {
+            return;
+        }
+        if (tryInvokeInstance(api, "onDisable", new Class<?>[]{JavaPlugin.class}, this)) {
+            return;
+        }
+
+        logger.warning("Unable to locate a compatible NoteBlockAPI shutdown method; continuing shutdown.");
+    }
+
+    private boolean tryInvokeStatic(Class<?> owner, String methodName) {
+        return tryInvokeStatic(owner, methodName, new Class<?>[0]);
+    }
+
+    private boolean tryInvokeStatic(Class<?> owner, String methodName, Class<?>[] parameterTypes, Object... args) {
+        try {
+            Method method = owner.getMethod(methodName, parameterTypes);
+            method.setAccessible(true);
+            method.invoke(null, args);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (ReflectiveOperationException exception) {
+            logger.log(Level.SEVERE, "Failed to invoke NoteBlockAPI#" + methodName, exception);
+            return true;
+        }
+    }
+
+    private boolean tryInvokeInstance(Object target, String methodName) {
+        return tryInvokeInstance(target, methodName, new Class<?>[0]);
+    }
+
+    private boolean tryInvokeInstance(Object target, String methodName, Class<?>[] parameterTypes, Object... args) {
+        try {
+            Method method = target.getClass().getMethod(methodName, parameterTypes);
+            method.setAccessible(true);
+            method.invoke(target, args);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (ReflectiveOperationException exception) {
+            logger.log(Level.SEVERE, "Failed to invoke NoteBlockAPI#" + methodName, exception);
+            return true;
+        }
     }
 
     private void preHookPlugins() {
