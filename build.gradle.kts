@@ -111,6 +111,12 @@ subprojects {
         maven(url = "https://ci.ender.zone/plugin/repository/everything/")
         maven(url = "https://repo.rosewooddev.io/repository/public/")
     }
+    configurations.all {
+        resolutionStrategy.capabilitiesResolution.withCapability("org.spigotmc:spigot-api") {
+            select("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+            because("Paper API supersedes Spigot API")
+        }
+    }
     val javaVersion = findProperty("javaVersion")?.toString()?.toIntOrNull() ?: 21
 
     tasks.withType<JavaCompile>().configureEach {

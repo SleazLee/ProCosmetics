@@ -16,6 +16,7 @@ public class LicenseCommand extends SubCommand<CommandSender> {
 
     @Override
     public void onExecute(CommandSender sender, String[] args) {
-        audience(sender).sendMessage(Component.text(plugin.getDescription().getName() + " is licensed under: https://www.spigotmc.org/members/" + plugin.getValue(), NamedTextColor.GREEN));
+        String licenseHolder = plugin.getDescription().getAuthors().stream().findFirst().orElse("unknown");
+        audience(sender).sendMessage(Component.text(plugin.getDescription().getName() + " is licensed under: https://www.spigotmc.org/members/" + licenseHolder, NamedTextColor.GREEN));
     }
 }
