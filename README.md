@@ -56,6 +56,54 @@ changes below before updating:
 - **Resource layout**: Plugin descriptors (`plugin.yml`, locales, etc.) live under the new `plugin` module so both Gradle
   and Maven builds package the same assets.
 
+### NoteBlockAPI on Folia
+
+ProCosmetics bundles a fork of **NoteBlockAPI** and uses it extensively for the entire music cosmetic category. The
+library powers song decoding (`songs/*.nbs` files) and playback, as seen in
+`MusicTypeImpl`/`MusicImpl` and the plugin bootstrap where the API is initialised and shut down.【F:core/src/main/java/se/file14/procosmetics/cosmetic/music/MusicTypeImpl.java†L1-L84】【F:core/src/main/java/se/file14/procosmetics/cosmetic/music/MusicImpl.java†L1-L125】【F:core/src/main/java/se/file14/procosmetics/ProCosmeticsPlugin.java†L1-L176】
+
+Because Folia refuses to load plugins that are not explicitly marked as compatible, the upstream NoteBlockAPI release
+(`NoteBlockAPI v1.6.5-SNAPSHOT`) will be rejected during startup. You have three practical options when targeting Folia:
+
+1. **Ship a Folia-capable fork** – Create a fork of NoteBlockAPI, add the Folia metadata (and any scheduler changes that
+   may be required), and depend on that fork. This keeps all music cosmetics functional.
+2. **Shade the fork directly** – We already shade our dependency; updating it to a Folia-ready fork avoids the need to
+   install NoteBlockAPI as a separate plugin on the server. Follow the steps below once your forked jar is ready.
+3. **Disable music cosmetics** – Removing NoteBlockAPI will prevent music cosmetics from loading, so if you cannot
+   maintain a fork you should disable or remove the entire music category from your configuration to avoid runtime
+   errors.
+
+For production servers we strongly recommend option 2 so players retain access to the music cosmetics while remaining
+Folia-compliant.
+
+#### Shading your Folia-ready NoteBlockAPI fork
+
+1. Build your fork and copy the resulting jar into `libs/NoteBlockAPI-folia.jar` in the repository root (create the
+   `libs` directory if it does not exist). Keeping the jar in a shared location lets both the Gradle and Maven builds
+   reference the same artifact.
+2. Update the Gradle dependencies so every module resolves against the local jar:
+   - In `api/build.gradle.kts`, replace the existing NoteBlockAPI `compileOnly` entry with
+     ```kotlin
+     compileOnly(files(rootProject.file("libs/NoteBlockAPI-folia.jar")))
+     ```
+   - In `core/build.gradle.kts`, replace the NoteBlockAPI `implementation` entry with
+     ```kotlin
+     implementation(files(rootProject.file("libs/NoteBlockAPI-folia.jar")))
+     ```
+   These statements keep the jar shaded into the final plugin artifact, just like the current remote dependency.
+3. If you use the Maven build, install the jar into your local Maven repository so the `api` and `core` modules can pull
+   it in:
+   ```bash
+   mvn install:install-file \ 
+     -Dfile=libs/NoteBlockAPI-folia.jar \ 
+     -DgroupId=se.file14.folia \ 
+     -DartifactId=NoteBlockAPI \ 
+     -Dversion=1.6.5-folia \ 
+     -Dpackaging=jar
+   ```
+   Afterwards, update both `api/pom.xml` and `core/pom.xml` to depend on `se.file14.folia:NoteBlockAPI:1.6.5-folia`
+   instead of the temporary JitPack coordinate.
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).md for full details.
