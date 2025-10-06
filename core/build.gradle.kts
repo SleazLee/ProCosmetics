@@ -1,7 +1,11 @@
 dependencies {
-    // Spigot API
-    compileOnly("org.spigotmc:spigot:1.21.8-R0.1-SNAPSHOT")
-    compileOnly("org.spigotmc:spigot-api:1.21.8-R0.1-SNAPSHOT")
+    // Paper API
+    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+
+    // Mojang & networking classes referenced directly
+    compileOnly("com.mojang:authlib:6.0.58")
+    compileOnly("io.netty:netty-transport:4.1.118.Final")
+    compileOnly("commons-lang:commons-lang:2.6")
 
     // Project dependencies
     implementation(project(":api"))

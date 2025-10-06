@@ -1,6 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.apache.tools.ant.filters.ReplaceTokens
-import java.net.URI
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.tasks.SourceSetContainer
+import procosmetics.build.VersionedObfTask
+import procosmetics.build.ensurePaperDevBundleExtracted
+import procosmetics.build.ensurePaperDevBundleResources
+import java.io.File
 
 plugins {
     java
@@ -52,6 +57,11 @@ tasks.named("jar") {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven(url = "https://repo.papermc.io/repository/maven-public/") {
+        metadataSources {
+            artifact()
+        }
+    }
     maven(url = "https://jitpack.io")
 }
 
@@ -68,12 +78,12 @@ subprojects {
         mavenLocal()
         mavenCentral()
 
-        // Spigot
-        maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
-        maven(url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-
         // Paper
-        maven { url = uri("https://papermc.io/repo/maven-public/") }
+        maven(url = "https://repo.papermc.io/repository/maven-public/") {
+            metadataSources {
+                artifact()
+            }
+        }
 
         // Plugins
         maven(url = "https://jitpack.io")
@@ -83,6 +93,12 @@ subprojects {
         maven(url = "https://ci.ender.zone/plugin/repository/everything/")
         maven(url = "https://repo.rosewooddev.io/repository/public/")
     }
+    configurations.all {
+        resolutionStrategy.capabilitiesResolution.withCapability("org.spigotmc:spigot-api") {
+            select("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+            because("Paper API supersedes Spigot API")
+        }
+    }
     val javaVersion = findProperty("javaVersion")?.toString()?.toIntOrNull() ?: 21
 
     tasks.withType<JavaCompile>().configureEach {
@@ -90,125 +106,61 @@ subprojects {
             languageVersion.set(JavaLanguageVersion.of(javaVersion))
         })
     }
-}
 
-// Obfuscation Tasks
-abstract class VersionedObfTask @Inject constructor(
-    private val subproject: Project,
-    private val execOperations: ExecOperations
-) : DefaultTask() {
+    val remapVersion = findProperty("remapMinecraftVersion")?.toString()
+    if (remapVersion != null) {
+        extensions.extraProperties["remapMinecraftVersion"] = remapVersion
+        val paperDevBundle by configurations.creating {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+            isTransitive = false
+        }
 
-    // Configure inputs and paths at configuration time
-    @get:Input
-    val minecraftVersion: String = subproject.property("remapMinecraftVersion") as String
+        dependencies {
+            add(paperDevBundle.name, "io.papermc.paper:dev-bundle:$remapVersion-R0.1-SNAPSHOT@zip")
+        }
 
-    @get:Input
-    val nmsName: String = subproject.name
+        val bundleCacheRoot = project.rootProject.layout.projectDirectory.dir(".gradle/paper-dev-bundles").asFile
+        val bundleFile = paperDevBundle.singleFile
+        val extractedDir = ensurePaperDevBundleExtracted(bundleCacheRoot, remapVersion, bundleFile)
+        val paperclipResources = ensurePaperDevBundleResources(extractedDir, remapVersion)
+        val spigotFiles = project.files(paperclipResources.patchedJar)
 
-    @get:Input
-    val projectName: String = project.name
+        dependencies {
+            add("compileOnly", spigotFiles)
+        }
 
-    @get:Input
-    val projectVersion: String = project.version.toString()
+        tasks.withType<JavaCompile>().configureEach {
+            classpath = classpath.plus(spigotFiles)
+        }
 
-    @get:Internal
-    val homeDir: File = project.gradle.gradleUserHomeDir.parentFile
+        extensions.extraProperties["paperclipResources"] = paperclipResources
 
-    @get:Internal
-    val buildDir: File = project.layout.buildDirectory.get().asFile
+        project.extensions.getByType(SourceSetContainer::class.java).named("main") {
+            compileClasspath += spigotFiles
+        }
 
-    init {
-        group = "jar preparation"
-        description = "Generates an obfuscated version of the jar to use with Spigot!"
-        dependsOn("shadowJar")
+        extensions.extraProperties["paperDevBundleConfig"] = paperDevBundle
     }
 
-    private fun resolveSpecialSourceJar(): File {
-        val envDir = project.findProperty("SpecialSourcePath")?.toString()?.takeIf { it.isNotBlank() }
-            ?: System.getenv("SpecialSourcePath")?.takeIf { it.isNotBlank() }
+}
 
-        val candidate = if (envDir != null) {
-            File(envDir, "SpecialSource.jar")
-        } else {
-            File(project.projectDir, "SpecialSource.jar")
-        }
-
-        // If found, use it
-        if (candidate.exists()) {
-            return candidate
-        }
-
-        // If not found, we download it to the project root
-        val downloadTarget = File(project.projectDir, "SpecialSource.jar")
-
-        if (!downloadTarget.exists()) {
-            val downloadUrl =
-                "https://repo1.maven.org/maven2/net/md-5/SpecialSource/1.11.5/SpecialSource-1.11.5-shaded.jar"
-
-            logger.lifecycle("SpecialSource.jar not found at ${candidate.absolutePath}")
-            logger.lifecycle("Downloading SpecialSource.jar from $downloadUrl to ${downloadTarget.absolutePath} ...")
-
-            // Make parent directory if needed
-            downloadTarget.parentFile?.let { if (!it.exists()) it.mkdirs() }
-
-            // Download
-            URI(downloadUrl).toURL().openStream().use { input ->
-                downloadTarget.outputStream().use { output ->
-                    input.copyTo(output)
-                }
+subprojects.forEach { subproject ->
+    if (subproject.extensions.extraProperties.has("paperDevBundleConfig") &&
+        subproject.extensions.extraProperties.has("remapMinecraftVersion")) {
+        val devBundleConfig = subproject.extensions.extraProperties["paperDevBundleConfig"] as Configuration
+        val devBundleFileProvider = devBundleConfig.elements.map { elements ->
+            require(elements.size == 1) {
+                "Expected exactly one Paper dev bundle for project ${subproject.name}"
             }
-            logger.lifecycle("Downloaded SpecialSource.jar to ${downloadTarget.absolutePath}")
-        }
-        return downloadTarget
-    }
-
-    @TaskAction
-    fun obfuscate() {
-        val specialSourceFile = resolveSpecialSourceJar()
-
-        val libsDir = "$buildDir/libs"
-        val inputJar = "$libsDir/$projectName-$projectVersion.jar"
-        val obfJar = "$libsDir/$projectName-$projectVersion-obf.jar"
-
-        // Validate required files exist
-        require(specialSourceFile.exists()) {
-            "SpecialSource.jar not found at ${specialSourceFile.absolutePath}"
+            project.objects.fileProperty().fileValue(elements.single().asFile).get()
         }
 
-        val mojangMap =
-            "$homeDir/.m2/repository/org/spigotmc/minecraft-server/$minecraftVersion-R0.1-SNAPSHOT/minecraft-server-$minecraftVersion-R0.1-SNAPSHOT-maps-mojang.txt"
-        val spigotMap =
-            "$homeDir/.m2/repository/org/spigotmc/minecraft-server/$minecraftVersion-R0.1-SNAPSHOT/minecraft-server-$minecraftVersion-R0.1-SNAPSHOT-maps-spigot.csrg"
-        val mojangRemap =
-            "$homeDir/.m2/repository/org/spigotmc/spigot/$minecraftVersion-R0.1-SNAPSHOT/spigot-$minecraftVersion-R0.1-SNAPSHOT-remapped-mojang.jar"
-        val obfuscationRemap =
-            "$homeDir/.m2/repository/org/spigotmc/spigot/$minecraftVersion-R0.1-SNAPSHOT/spigot-$minecraftVersion-R0.1-SNAPSHOT-remapped-obf.jar"
-
-        // First pass: mojang -> obf
-        execOperations.exec {
-            workingDir(buildDir)
-            commandLine(
-                "java", "-cp", "$specialSourceFile${File.pathSeparator}$mojangRemap",
-                "net.md_5.specialsource.SpecialSource", "--live", "--only", "se/file14/procosmetics/$nmsName", "-q",
-                "-i", inputJar, "-o", obfJar, "-m", mojangMap, "--reverse"
-            )
+        tasks.register<VersionedObfTask>("obf${subproject.name.replaceFirstChar { char -> char.uppercaseChar() }}") {
+            dependsOn("shadowJar")
+            minecraftVersion.set(subproject.extensions.extraProperties["remapMinecraftVersion"].toString())
+            devBundleZip.set(devBundleFileProvider)
         }
-
-        // Second pass: obf -> spigot
-        execOperations.exec {
-            workingDir(buildDir)
-            commandLine(
-                "java", "-cp", "$specialSourceFile${File.pathSeparator}$obfuscationRemap",
-                "net.md_5.specialsource.SpecialSource", "--live", "--only", "se/file14/procosmetics/$nmsName", "-q",
-                "-i", obfJar, "-o", inputJar, "-m", spigotMap
-            )
-        }
-    }
-}
-
-subprojects.forEach {
-    if (it.extra.has("remapMinecraftVersion")) {
-        tasks.register("obf${it.name.replaceFirstChar { char -> char.uppercaseChar() }}", VersionedObfTask::class, it)
     }
 }
 

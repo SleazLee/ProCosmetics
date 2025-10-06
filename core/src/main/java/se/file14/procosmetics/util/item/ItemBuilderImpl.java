@@ -26,8 +26,10 @@ import java.util.function.Consumer;
 
 public class ItemBuilderImpl implements ItemBuilder {
 
+    private static final ItemFlag HIDE_ENCHANTMENT_GLINT_OVERRIDE_FLAG = resolveItemFlag("HIDE_ENCHANTMENT_GLINT_OVERRIDE");
+
     public static final ItemFlag[] ITEM_FLAGS = Arrays.stream(ItemFlag.values())
-            .filter(flag -> Mapping.MAPPING_TYPE == MappingType.SPIGOT && flag != ItemFlag.HIDE_LORE)
+            .filter(flag -> !(Mapping.MAPPING_TYPE == MappingType.SPIGOT && flag.name().equals("HIDE_LORE")))
             .toArray(ItemFlag[]::new);
 
     private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.legacySection();
@@ -229,12 +231,22 @@ public class ItemBuilderImpl implements ItemBuilder {
         return modifyItemMeta(meta -> {
             meta.setEnchantmentGlintOverride(override);
 
-            if (override) {
-                meta.addItemFlags(ItemFlag.HIDE_ENCHANTMENT_GLINT_OVERRIDE);
-            } else {
-                meta.removeItemFlags(ItemFlag.HIDE_ENCHANTMENT_GLINT_OVERRIDE);
+            if (HIDE_ENCHANTMENT_GLINT_OVERRIDE_FLAG != null) {
+                if (override) {
+                    meta.addItemFlags(HIDE_ENCHANTMENT_GLINT_OVERRIDE_FLAG);
+                } else {
+                    meta.removeItemFlags(HIDE_ENCHANTMENT_GLINT_OVERRIDE_FLAG);
+                }
             }
         });
+    }
+
+    private static ItemFlag resolveItemFlag(String name) {
+        try {
+            return ItemFlag.valueOf(name);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     @Override
