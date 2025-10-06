@@ -12,6 +12,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.structure.type.FallingBlocksStructure;
 
 import javax.annotation.Nullable;
@@ -57,10 +58,7 @@ public class HotAirBalloon implements GadgetBehavior {
 
         context.getUser().setFallDamageProtection((int) context.getType().getDuration());
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationInTicks()
-        );
+        Scheduler.runLater(seatLocation, () -> onUnequip(context), context.getType().getDurationInTicks());
         return InteractionResult.SUCCESS;
     }
 

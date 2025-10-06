@@ -11,6 +11,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.structure.type.FallingBlocksStructure;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -49,10 +50,7 @@ public class Shower implements GadgetBehavior {
                 waterDripLocations.add(shower.clone().add(2.0d * i * offset - offset, DRIP_HEIGHT, 2.0d * k * offset - offset));
             }
         }
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationInTicks()
-        );
+        Scheduler.runLater(center, () -> onUnequip(context), context.getType().getDurationInTicks());
         return InteractionResult.SUCCESS;
     }
 

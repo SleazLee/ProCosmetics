@@ -19,6 +19,7 @@ import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
 import se.file14.procosmetics.util.item.ItemBuilderImpl;
+import se.file14.procosmetics.util.Scheduler;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,7 +49,7 @@ public class Squid implements MorphBehavior {
             shooting = true;
             Player player = context.getPlayer();
             player.getWorld().playSound(player, Sound.ENTITY_SQUID_SQUIRT, 1.0f, 2.0f);
-            context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(), this::clearItems, 140L);
+            Scheduler.runLater(player.getLocation(), this::clearItems, 140L);
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.NO_ACTION;

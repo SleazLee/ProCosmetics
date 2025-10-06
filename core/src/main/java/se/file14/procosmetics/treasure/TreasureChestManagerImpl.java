@@ -21,6 +21,7 @@ import se.file14.procosmetics.util.broadcaster.LootBroadcaster;
 import se.file14.procosmetics.util.structure.NamedStructureData;
 import se.file14.procosmetics.util.structure.StructureDataImpl;
 import se.file14.procosmetics.util.structure.StructureReader;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class TreasureChestManagerImpl implements TreasureChestManager {
 
     public void delayLoadPlatform() {
         // We schedule to load them after all world-plugins are loaded!
-        plugin.getServer().getScheduler().runTaskLater(plugin, this::loadPlatforms, 20L);
+        Scheduler.runLater(this::loadPlatforms, 20L);
     }
 
     private void loadPlatforms() {

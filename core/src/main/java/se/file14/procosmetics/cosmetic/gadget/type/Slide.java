@@ -22,6 +22,7 @@ import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.util.FastMathUtil;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.structure.type.BlockStructure;
 
 import javax.annotation.Nullable;
@@ -56,10 +57,7 @@ public class Slide implements GadgetBehavior, Listener {
                 break;
             }
         }
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationInTicks()
-        );
+        Scheduler.runLater(center, () -> onUnequip(context), context.getType().getDurationInTicks());
         return InteractionResult.SUCCESS;
     }
 
@@ -90,7 +88,7 @@ public class Slide implements GadgetBehavior, Listener {
                 seat.getBukkitEntity().remove();
 
                 // Must run 1 tick later. Cannot apply velocity on 1.19.4+ in the same tick as the entity remove
-                context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(), () -> {
+                Scheduler.runLater(center, () -> {
                     if (passenger instanceof Player player && player.isOnline()) {
                         passenger.setVelocity(passenger.getVelocity().add(
                                 center.getDirection().multiply(0.5d).add(new Vector(0.0d, 0.4d, 0.0d))));

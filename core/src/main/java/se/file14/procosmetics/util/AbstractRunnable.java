@@ -1,51 +1,53 @@
 package se.file14.procosmetics.util;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitTask;
 
 public abstract class AbstractRunnable implements Runnable {
 
-    private BukkitTask task;
+    private Scheduler.Task task;
 
-    public BukkitTask runTask(Plugin plugin) throws IllegalArgumentException, IllegalStateException {
+    public Scheduler.Task runTask(Plugin plugin) throws IllegalArgumentException, IllegalStateException {
         checkNotYetScheduled();
-        return setupTask(Bukkit.getScheduler().runTask(plugin, this));
+        return setupTask(Scheduler.runLater(this, 0L));
     }
 
-    public BukkitTask runTaskAsynchronously(Plugin plugin) throws IllegalArgumentException, IllegalStateException {
+    public Scheduler.Task runTaskAsynchronously(Plugin plugin) throws IllegalArgumentException, IllegalStateException {
         checkNotYetScheduled();
-        return setupTask(Bukkit.getScheduler().runTaskAsynchronously(plugin, this));
+        return setupTask(Scheduler.runAsyncLater(this, 0L));
     }
 
-    public BukkitTask runTaskLater(Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
+    public Scheduler.Task runTaskLater(Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
         checkNotYetScheduled();
-        return setupTask(Bukkit.getScheduler().runTaskLater(plugin, this, delay));
+        return setupTask(Scheduler.runLater(this, delay));
     }
 
-    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
+    public Scheduler.Task runTaskLaterAsynchronously(Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
         checkNotYetScheduled();
-        return setupTask(Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, this, delay));
+        return setupTask(Scheduler.runAsyncLater(this, delay));
     }
 
-    public BukkitTask runTaskTimer(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
+    public Scheduler.Task runTaskTimer(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
         checkNotYetScheduled();
-        return setupTask(Bukkit.getScheduler().runTaskTimer(plugin, this, delay, period));
+        return setupTask(Scheduler.runTimer(this, delay, period));
     }
 
-    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
+    public Scheduler.Task runTaskTimerAsynchronously(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
         checkNotYetScheduled();
-        return setupTask(Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this, delay, period));
+        return setupTask(Scheduler.runAsyncTimer(this, delay, period));
     }
 
-    private BukkitTask setupTask(BukkitTask task) {
-        this.task = task;
+    private Scheduler.Task setupTask(Scheduler.Task task) {
+        if (task == null || task.isDummy()) {
+            this.task = null;
+        } else {
+            this.task = task;
+        }
         return task;
     }
 
     public void cancel() {
         if (isRunning()) {
-            Bukkit.getScheduler().cancelTask(getTaskId());
+            task.cancel();
             task = null;
         }
     }
@@ -54,18 +56,8 @@ public abstract class AbstractRunnable implements Runnable {
         return task != null;
     }
 
-    public int getTaskId() throws IllegalStateException {
-        checkScheduled();
-        return task.getTaskId();
-    }
-
-    private void checkScheduled() {
-        if (task == null)
-            throw new IllegalStateException("Not scheduled yet");
-    }
-
     private void checkNotYetScheduled() {
         if (task != null)
-            throw new IllegalStateException("Already scheduled as " + task.getTaskId());
+            throw new IllegalStateException("Already scheduled");
     }
 }

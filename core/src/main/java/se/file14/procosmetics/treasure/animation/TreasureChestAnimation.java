@@ -14,7 +14,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import se.file14.procosmetics.api.ProCosmetics;
 import se.file14.procosmetics.api.event.PlayerOpenTreasureEvent;
@@ -29,16 +28,18 @@ import se.file14.procosmetics.treasure.TreasureChestImpl;
 import se.file14.procosmetics.treasure.TreasureChestManagerImpl;
 import se.file14.procosmetics.treasure.TreasureChestPlatformImpl;
 import se.file14.procosmetics.treasure.loot.LootTable;
+import se.file14.procosmetics.util.AbstractRunnable;
 import se.file14.procosmetics.util.LocationUtil;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.structure.type.BlockStructure;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-public abstract class TreasureChestAnimation extends BukkitRunnable implements Listener {
+public abstract class TreasureChestAnimation extends AbstractRunnable implements Listener {
 
     private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.legacySection();
     private static final Title.Times DEFAULT_TIMES = Title.Times.times(Ticks.duration(5), Ticks.duration(50), Ticks.duration(5));
@@ -144,7 +145,7 @@ public abstract class TreasureChestAnimation extends BukkitRunnable implements L
         openedChests.add(location);
 
         if (openedChests.size() >= treasureChest.getChestsToOpen()) {
-            plugin.getJavaPlugin().getServer().getScheduler().runTaskLater(plugin.getJavaPlugin(), this::reset, 100L);
+            Scheduler.runLater(location, this::reset, 100L);
         }
     }
 
@@ -201,7 +202,7 @@ public abstract class TreasureChestAnimation extends BukkitRunnable implements L
 
     private void spawnFirework(Location location, CosmeticRarity rarity) {
         if (rarity.getDetonations() > 0) {
-            new BukkitRunnable() {
+            new AbstractRunnable() {
                 int i;
 
                 @Override
