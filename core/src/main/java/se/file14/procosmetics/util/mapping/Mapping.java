@@ -8,15 +8,31 @@ public class Mapping {
     public static MappingType MAPPING_TYPE = MappingType.SPIGOT;
 
     static {
-        try {
-            // Check if the server is running Paper
-            Class.forName("com.destroystokyo.paper.ParticleBuilder");
+        boolean useMojangMappings = false;
 
-            // Starting from 1.20.6 Paper uses Mojang mappings
+        try {
+            // Check if the server is running Paper. Starting from 1.20.6 Paper uses Mojang mappings.
+            Class.forName("com.destroystokyo.paper.ParticleBuilder");
             if (VersionUtil.isHigherThanOrEqualTo(BukkitVersion.v1_20)) {
-                MAPPING_TYPE = MappingType.MOJANG;
+                useMojangMappings = true;
             }
         } catch (ClassNotFoundException ignored) {
+            // Folia does not include this class, fall back to an additional check below.
+        }
+
+        if (!useMojangMappings) {
+            try {
+                // Folia and other Mojang-mapped forks expose unversioned CraftBukkit classes.
+                Class.forName("org.bukkit.craftbukkit.entity.CraftPlayer");
+                if (VersionUtil.isHigherThanOrEqualTo(BukkitVersion.v1_20)) {
+                    useMojangMappings = true;
+                }
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+
+        if (useMojangMappings) {
+            MAPPING_TYPE = MappingType.MOJANG;
         }
     }
 }
