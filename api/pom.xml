@@ -44,11 +44,5 @@
             <version>26.0.2</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>se.file14.folia</groupId>
-            <artifactId>NoteBlockAPI</artifactId>
-            <version>1.6.4-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 </project>

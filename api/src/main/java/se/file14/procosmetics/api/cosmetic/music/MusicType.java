@@ -1,6 +1,5 @@
 package se.file14.procosmetics.api.cosmetic.music;
 
-import com.xxmicloxx.NoteBlockAPI.model.Song;
 import se.file14.procosmetics.api.cosmetic.CosmeticType;
 
 /**
@@ -14,7 +13,7 @@ public interface MusicType extends CosmeticType<MusicType, MusicBehavior> {
      *
      * @return the song to be played
      */
-    Song getSong();
+    NoteBlockSong getSong();
 
     /**
      * Builder interface for constructing music type instances.
@@ -27,7 +26,7 @@ public interface MusicType extends CosmeticType<MusicType, MusicBehavior> {
          * @param song the song from NoteBlockAPI
          * @return this builder for method chaining
          */
-        Builder song(Song song);
+        Builder song(NoteBlockSong song);
 
         /**
          * Builds and returns the configured music type instance.
