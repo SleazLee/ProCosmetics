@@ -7,11 +7,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerCommonPacketListenerImpl;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import se.file14.procosmetics.nms.NMSUtilImpl;
@@ -59,7 +59,7 @@ public class NMSUtil extends NMSUtilImpl {
         Location location = block.getLocation();
         BlockPos blockPos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
 
-        ((CraftWorld) location.getWorld()).getHandle().blockEvent(blockPos,
+        ((Level) ReflectionUtil.getHandle(location.getWorld())).blockEvent(blockPos,
                 block.getType() == Material.CHEST ? Blocks.CHEST : Blocks.ENDER_CHEST,
                 1,
                 open ? 1 : 0
