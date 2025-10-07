@@ -31,7 +31,6 @@ import org.bukkit.Input;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -41,8 +40,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import se.file14.procosmetics.api.nms.EntityTracker;
-import se.file14.procosmetics.nms.NMSEntityImpl;
 import se.file14.procosmetics.nms.entitytype.CachedEntityType;
+import se.file14.procosmetics.nms.NMSEntityImpl;
+import se.file14.procosmetics.util.ReflectionUtil;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -65,7 +65,7 @@ public class NMSEntity extends NMSEntityImpl {
 
     public NMSEntity(World world, CachedEntityType cachedEntityType, EntityTracker tracker) {
         super(world, cachedEntityType, tracker);
-        entity = ((net.minecraft.world.entity.EntityType<?>) cachedEntityType.getEntityTypeObject()).create(((CraftWorld) world).getHandle(), EntitySpawnReason.COMMAND);
+        entity = ((net.minecraft.world.entity.EntityType<?>) cachedEntityType.getEntityTypeObject()).create((Level) ReflectionUtil.getHandle(world), EntitySpawnReason.COMMAND);
     }
 
     public NMSEntity(World world, BlockData blockData, EntityTracker tracker) {
@@ -76,7 +76,7 @@ public class NMSEntity extends NMSEntityImpl {
                 fallingBlockConstructor = FallingBlockEntity.class.getDeclaredConstructor(Level.class, double.class, double.class, double.class, BlockState.class);
                 fallingBlockConstructor.setAccessible(true);
             }
-            entity = fallingBlockConstructor.newInstance(((CraftWorld) world).getHandle(), 0.0d, 0.0d, 0.0d, ((CraftBlockData) blockData).getState());
+            entity = fallingBlockConstructor.newInstance((Level) ReflectionUtil.getHandle(world), 0.0d, 0.0d, 0.0d, ((CraftBlockData) blockData).getState());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             e.printStackTrace();
