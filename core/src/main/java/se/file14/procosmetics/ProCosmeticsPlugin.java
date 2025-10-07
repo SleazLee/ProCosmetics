@@ -7,6 +7,7 @@ import org.bstats.charts.SimplePie;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -79,12 +80,14 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
     private boolean disabling;
 
     private CategoryRegistries categoryRegistries;
+    private boolean selfInitializedNoteBlockApi;
 
     @Override
     public void onLoad() {
         ProCosmeticsPlugin.plugin = this;
         logger = getLogger();
         disabling = false;
+        selfInitializedNoteBlockApi = false;
 
         if (!VersionUtil.isSupported()) {
             LogUtil.printUnsupported();
@@ -203,20 +206,40 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
     }
 
     private void initializeNoteBlockAPI() {
+        if (NoteBlockAPI.getAPI() != null) {
+            return;
+        }
+        PluginManager pluginManager = getServer().getPluginManager();
+        Plugin provided = pluginManager.getPlugin("NoteBlockAPI");
+        if (provided != null) {
+            if (!provided.isEnabled()) {
+                pluginManager.enablePlugin(provided);
+            }
+            if (NoteBlockAPI.getAPI() != null) {
+                return;
+            }
+        }
+
         if (tryInvokeStatic(NoteBlockAPI.class, "initializeAPI")) {
+            selfInitializedNoteBlockApi = true;
             return;
         }
         if (tryInvokeStatic(NoteBlockAPI.class, "initializeAPI", new Class<?>[]{JavaPlugin.class}, this)) {
+            selfInitializedNoteBlockApi = true;
             return;
         }
         if (tryInvokeStatic(NoteBlockAPI.class, "initialize", new Class<?>[]{JavaPlugin.class}, this)) {
+            selfInitializedNoteBlockApi = true;
             return;
         }
 
-        logger.warning("Unable to locate a compatible NoteBlockAPI initialization method; continuing without explicit init.");
+        logger.warning("Unable to locate a compatible NoteBlockAPI initialization method; NoteBlockAPI must be installed as a plugin or expose initializeAPI.");
     }
 
     private void shutdownNoteBlockAPI() {
+        if (!selfInitializedNoteBlockApi) {
+            return;
+        }
         Object api = NoteBlockAPI.getAPI();
         if (api == null) {
             return;

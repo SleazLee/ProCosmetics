@@ -170,6 +170,10 @@ subprojects {
 subprojects.forEach { subproject ->
     if (subproject.extensions.extraProperties.has("paperDevBundleConfig") &&
         subproject.extensions.extraProperties.has("remapMinecraftVersion")) {
+        val enableSpigotRemap = subproject.findProperty("enableSpigotRemap")?.toString()?.toBoolean() ?: true
+        if (!enableSpigotRemap) {
+            return@forEach
+        }
         val devBundleConfig = subproject.extensions.extraProperties["paperDevBundleConfig"] as Configuration
         val devBundleFileProvider = devBundleConfig.elements.map { elements ->
             require(elements.size == 1) {
