@@ -12,6 +12,4 @@ dependencies {
     // Annotations
     compileOnly("org.jetbrains:annotations:26.0.2")
 
-    //compileOnly("com.github.koca2000:NoteBlockAPI:1.6.3") // temporarily disabled
-    compileOnly(files(rootProject.file("libs/NoteBlockAPI-1.6.4-SNAPSHOT.jar")))
 }

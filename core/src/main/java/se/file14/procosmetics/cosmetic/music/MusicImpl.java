@@ -1,8 +1,5 @@
 package se.file14.procosmetics.cosmetic.music;
 
-import com.xxmicloxx.NoteBlockAPI.event.SongEndEvent;
-import com.xxmicloxx.NoteBlockAPI.model.SoundCategory;
-import com.xxmicloxx.NoteBlockAPI.songplayer.PositionSongPlayer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;
@@ -11,6 +8,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -20,6 +18,7 @@ import se.file14.procosmetics.ProCosmeticsPlugin;
 import se.file14.procosmetics.api.cosmetic.music.Music;
 import se.file14.procosmetics.api.cosmetic.music.MusicBehavior;
 import se.file14.procosmetics.api.cosmetic.music.MusicType;
+import se.file14.procosmetics.api.cosmetic.music.NoteBlockSong;
 import se.file14.procosmetics.api.nms.EntityTracker;
 import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.api.user.User;
@@ -32,6 +31,8 @@ import se.file14.procosmetics.util.item.HeadUtil;
 import se.file14.procosmetics.util.item.Heads;
 import se.file14.procosmetics.util.item.ItemBuilderImpl;
 import se.file14.procosmetics.util.material.Materials;
+import se.file14.procosmetics.noteblock.NoteBlockApiSupport;
+import se.file14.procosmetics.noteblock.NoteBlockSongPlayer;
 
 public class MusicImpl extends CosmeticImpl<MusicType, MusicBehavior> implements Music, Listener {
 
@@ -62,7 +63,7 @@ public class MusicImpl extends CosmeticImpl<MusicType, MusicBehavior> implements
     private final Vector discoBallVector = new Vector();
 
     private final boolean discoFloor;
-    private PositionSongPlayer songPlayer;
+    private NoteBlockSongPlayer songPlayer;
     private final EntityTracker tracker = new EntityTrackerImpl();
     private NMSEntity armorStand;
     private NMSEntity cd;
@@ -113,6 +114,19 @@ public class MusicImpl extends CosmeticImpl<MusicType, MusicBehavior> implements
         location.setYaw(yaw);
         location.setPitch(0.0f);
 
+        NoteBlockApiSupport support = NoteBlockApiSupport.getInstance();
+        NoteBlockSong noteBlockSong = cosmeticType.getSong();
+        if (noteBlockSong == null) {
+            plugin.getLogger().warning("No song is configured for music cosmetic " + cosmeticType.getKey() + '.');
+            return;
+        }
+
+        songPlayer = support.createPositionSongPlayer(noteBlockSong, plugin.getLogger());
+        if (songPlayer == null) {
+            plugin.getLogger().warning("Failed to create a NoteBlockAPI song player for " + cosmeticType.getKey() + '.');
+            return;
+        }
+
         createDJ(location);
         location.add(location.getDirection().multiply(1.0d));
         createJukebox(location);
@@ -121,7 +135,6 @@ public class MusicImpl extends CosmeticImpl<MusicType, MusicBehavior> implements
         spawnFirework(location);
         tracker.startTracking();
 
-        songPlayer = new PositionSongPlayer(cosmeticType.getSong(), SoundCategory.RECORDS);
         songPlayer.setTargetLocation(location);
         songPlayer.setPlaying(true);
 
@@ -200,8 +213,18 @@ public class MusicImpl extends CosmeticImpl<MusicType, MusicBehavior> implements
     }
 
     @EventHandler
-    public void onSongEnd(SongEndEvent event) {
-        if (songPlayer == event.getSongPlayer()) {
+    public void onSongEnd(Event event) {
+        if (songPlayer == null) {
+            return;
+        }
+
+        NoteBlockApiSupport support = NoteBlockApiSupport.getInstance();
+        if (!support.isSongEndEvent(event)) {
+            return;
+        }
+
+        Object handle = support.extractSongPlayer(event);
+        if (handle != null && handle == songPlayer.unwrap()) {
             user.removeCosmetic(cosmeticType.getCategory(), false, false);
         }
     }

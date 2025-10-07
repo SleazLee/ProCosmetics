@@ -1,6 +1,5 @@
 package se.file14.procosmetics;
 
-import com.xxmicloxx.NoteBlockAPI.NoteBlockAPI;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
@@ -81,6 +80,8 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
 
     private CategoryRegistries categoryRegistries;
     private boolean selfInitializedNoteBlockApi;
+    private Class<?> noteBlockApiClass;
+    private boolean noteBlockApiUnavailable;
 
     @Override
     public void onLoad() {
@@ -206,7 +207,12 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
     }
 
     private void initializeNoteBlockAPI() {
-        if (NoteBlockAPI.getAPI() != null) {
+        Class<?> noteBlockApi = resolveNoteBlockApiClass();
+        if (noteBlockApi == null) {
+            return;
+        }
+
+        if (invokeStaticForResult(noteBlockApi, "getAPI") != null) {
             return;
         }
         PluginManager pluginManager = getServer().getPluginManager();
@@ -215,20 +221,20 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
             if (!provided.isEnabled()) {
                 pluginManager.enablePlugin(provided);
             }
-            if (NoteBlockAPI.getAPI() != null) {
+            if (invokeStaticForResult(noteBlockApi, "getAPI") != null) {
                 return;
             }
         }
 
-        if (tryInvokeStatic(NoteBlockAPI.class, "initializeAPI")) {
+        if (tryInvokeStatic(noteBlockApi, "initializeAPI")) {
             selfInitializedNoteBlockApi = true;
             return;
         }
-        if (tryInvokeStatic(NoteBlockAPI.class, "initializeAPI", new Class<?>[]{JavaPlugin.class}, this)) {
+        if (tryInvokeStatic(noteBlockApi, "initializeAPI", new Class<?>[]{JavaPlugin.class}, this)) {
             selfInitializedNoteBlockApi = true;
             return;
         }
-        if (tryInvokeStatic(NoteBlockAPI.class, "initialize", new Class<?>[]{JavaPlugin.class}, this)) {
+        if (tryInvokeStatic(noteBlockApi, "initialize", new Class<?>[]{JavaPlugin.class}, this)) {
             selfInitializedNoteBlockApi = true;
             return;
         }
@@ -240,7 +246,12 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
         if (!selfInitializedNoteBlockApi) {
             return;
         }
-        Object api = NoteBlockAPI.getAPI();
+        Class<?> noteBlockApi = resolveNoteBlockApiClass();
+        if (noteBlockApi == null) {
+            return;
+        }
+
+        Object api = invokeStaticForResult(noteBlockApi, "getAPI");
         if (api == null) {
             return;
         }
@@ -253,6 +264,30 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
         }
 
         logger.warning("Unable to locate a compatible NoteBlockAPI shutdown method; continuing shutdown.");
+    }
+
+    private Class<?> resolveNoteBlockApiClass() {
+        if (noteBlockApiClass != null || noteBlockApiUnavailable) {
+            return noteBlockApiClass;
+        }
+
+        String[] candidates = new String[]{
+                "com.xxmicloxx.NoteBlockAPI.NoteBlockAPI",
+                "com.xxmicloxx.noteblockapi.NoteBlockAPI"
+        };
+
+        for (String candidate : candidates) {
+            try {
+                noteBlockApiClass = Class.forName(candidate);
+                return noteBlockApiClass;
+            } catch (ClassNotFoundException ignored) {
+                // Continue searching
+            }
+        }
+
+        noteBlockApiUnavailable = true;
+        logger.warning("NoteBlockAPI could not be found on the classpath. Please ensure the Folia-compatible NoteBlockAPI jar is configured as a dependency or installed as a plugin.");
+        return null;
     }
 
     private boolean tryInvokeStatic(Class<?> owner, String methodName) {
@@ -270,6 +305,23 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
         } catch (ReflectiveOperationException exception) {
             logger.log(Level.SEVERE, "Failed to invoke NoteBlockAPI#" + methodName, exception);
             return true;
+        }
+    }
+
+    private Object invokeStaticForResult(Class<?> owner, String methodName) {
+        return invokeStaticForResult(owner, methodName, new Class<?>[0]);
+    }
+
+    private Object invokeStaticForResult(Class<?> owner, String methodName, Class<?>[] parameterTypes, Object... args) {
+        try {
+            Method method = owner.getMethod(methodName, parameterTypes);
+            method.setAccessible(true);
+            return method.invoke(null, args);
+        } catch (NoSuchMethodException ignored) {
+            return null;
+        } catch (ReflectiveOperationException exception) {
+            logger.log(Level.SEVERE, "Failed to invoke NoteBlockAPI#" + methodName, exception);
+            return null;
         }
     }
 
