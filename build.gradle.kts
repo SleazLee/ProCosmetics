@@ -2,6 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.gradle.api.file.DuplicatesStrategy
 import java.io.File
 import se.file14.procosmetics.gradle.VersionedObfTask
 import se.file14.procosmetics.gradle.ensurePaperDevBundleExtracted
@@ -37,6 +38,10 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(layout.projectDirectory.dir("plugin/src/main/resources"))
+
     val projectVersion = project.version
     inputs.property("version", projectVersion)
     filesMatching("**/plugin.yml") {
@@ -47,6 +52,7 @@ tasks.processResources {
 // Configure shadow jar
 tasks.named<ShadowJar>("shadowJar") {
     archiveClassifier.set("")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     // Exclude unnecessary files
     exclude("META-INF/maven/**")
@@ -164,6 +170,10 @@ subprojects {
 subprojects.forEach { subproject ->
     if (subproject.extensions.extraProperties.has("paperDevBundleConfig") &&
         subproject.extensions.extraProperties.has("remapMinecraftVersion")) {
+        val enableSpigotRemap = subproject.findProperty("enableSpigotRemap")?.toString()?.toBoolean() ?: true
+        if (!enableSpigotRemap) {
+            return@forEach
+        }
         val devBundleConfig = subproject.extensions.extraProperties["paperDevBundleConfig"] as Configuration
         val devBundleFileProvider = devBundleConfig.elements.map { elements ->
             require(elements.size == 1) {
