@@ -9,7 +9,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import se.file14.procosmetics.api.ProCosmetics;
 import se.file14.procosmetics.api.ProCosmeticsProvider;
 import se.file14.procosmetics.api.config.Config;
@@ -48,9 +47,9 @@ import se.file14.procosmetics.worldguard.WorldGuardManager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URLConnection;
-import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -431,7 +430,7 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
         return plugin;
     }
 
-    public @NonNull BukkitAudiences adventure() {
+    public BukkitAudiences adventure() {
         if (adventure == null) {
             throw new IllegalStateException("Tried to access Adventure when the plugin was disabled!");
         }

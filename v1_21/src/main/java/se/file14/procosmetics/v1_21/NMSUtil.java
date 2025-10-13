@@ -1,7 +1,5 @@
 package se.file14.procosmetics.v1_21;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
 import io.netty.channel.Channel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.Connection;
@@ -9,7 +7,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -45,21 +42,10 @@ public class NMSUtil extends NMSUtilImpl {
     }
 
     @Override
-    public GameProfile getProfile(Player player) {
-        return ((CraftPlayer) player).getHandle().getGameProfile();
-    }
-
-    @Override
-    public String getPropertiesValue(Property property) {
-        return property.value();
-    }
-
-    @Override
     public void playChestAnimation(Block block, boolean open) {
-        Location location = block.getLocation();
-        BlockPos blockPos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        BlockPos blockPos = new BlockPos(block.getX(), block.getY(), block.getZ());
 
-        ((Level) ReflectionUtil.getHandle(location.getWorld())).blockEvent(blockPos,
+        ((Level) ReflectionUtil.getHandle(block.getWorld())).blockEvent(blockPos,
                 block.getType() == Material.CHEST ? Blocks.CHEST : Blocks.ENDER_CHEST,
                 1,
                 open ? 1 : 0
