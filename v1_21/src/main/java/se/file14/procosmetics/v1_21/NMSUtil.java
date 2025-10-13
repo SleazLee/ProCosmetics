@@ -9,7 +9,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import se.file14.procosmetics.nms.NMSUtilImpl;
 import se.file14.procosmetics.util.ReflectionUtil;
@@ -26,7 +25,11 @@ public class NMSUtil extends NMSUtilImpl {
 
     @Override
     public Channel getChannel(Player player) {
-        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        ServerPlayer serverPlayer = (ServerPlayer) ReflectionUtil.getHandle(player);
+
+        if (serverPlayer == null) {
+            return null;
+        }
 
         try {
             Connection connection = (Connection) (NETWORK_FIELD.get(serverPlayer.connection));
