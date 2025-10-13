@@ -65,7 +65,7 @@ public class Squid implements MorphBehavior {
             Item item = iterator.next();
 
             if (item.isOnGround()) {
-                item.remove();
+                Scheduler.run(item, item::remove);
                 iterator.remove();
             } else {
                 item.getLocation(itemLocation);
@@ -86,7 +86,7 @@ public class Squid implements MorphBehavior {
                     );
                     MathUtil.pushEntity(hitPlayer, itemLocation, 0.05d, 0.0d);
 
-                    item.remove();
+                    Scheduler.run(item, item::remove);
                     iterator.remove();
                 }
             }
@@ -130,7 +130,7 @@ public class Squid implements MorphBehavior {
 
     private void clearItems() {
         for (Item item : items) {
-            item.remove();
+            Scheduler.run(item, item::remove);
         }
         items.clear();
     }

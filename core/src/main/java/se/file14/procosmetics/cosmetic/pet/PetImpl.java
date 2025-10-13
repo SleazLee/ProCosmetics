@@ -22,6 +22,7 @@ import se.file14.procosmetics.cosmetic.CosmeticImpl;
 import se.file14.procosmetics.nms.NMSEntityImpl;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 public class PetImpl extends CosmeticImpl<PetType, PetBehavior> implements Pet {
 
@@ -116,8 +117,9 @@ public class PetImpl extends CosmeticImpl<PetType, PetBehavior> implements Pet {
             nmsEntity = null;
         }
         if (entity != null) {
-            entity.remove();
+            Entity entityToRemove = entity;
             entity = null;
+            Scheduler.run(entityToRemove, entityToRemove::remove);
         }
     }
 

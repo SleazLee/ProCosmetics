@@ -169,7 +169,8 @@ public class MerryGoRound implements GadgetBehavior {
         tracker.destroy();
 
         for (CoasterHorse coasterHorse : coasterHorses) {
-            coasterHorse.armorStand().getBukkitEntity().remove();
+            Entity armorStand = coasterHorse.armorStand().getBukkitEntity();
+            Scheduler.run(armorStand, armorStand::remove);
             COASTER_HORSES.remove(coasterHorse);
         }
         coasterHorses.clear();

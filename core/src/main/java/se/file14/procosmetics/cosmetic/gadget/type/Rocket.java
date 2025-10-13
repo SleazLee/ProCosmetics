@@ -13,6 +13,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.structure.type.FallingBlocksStructure;
 
 import javax.annotation.Nullable;
@@ -137,8 +138,9 @@ public class Rocket implements GadgetBehavior {
         launching = false;
 
         if (seat != null) {
-            seat.remove();
+            ArmorStand currentSeat = seat;
             seat = null;
+            Scheduler.run(currentSeat, currentSeat::remove);
             nmsArmorStand = null;
         }
     }

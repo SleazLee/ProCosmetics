@@ -24,6 +24,7 @@ import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.nms.NMSEntityImpl;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.material.Materials;
 
 import java.util.ArrayList;
@@ -219,8 +220,10 @@ public class HypeTrain implements MountBehavior, Listener {
             if (optionalTrainData.isPresent()) {
                 TrainData trainData = optionalTrainData.get();
                 carriages.remove(trainData);
-                vehicle.eject();
-                vehicle.remove();
+                Scheduler.run(vehicle, () -> {
+                    vehicle.eject();
+                    vehicle.remove();
+                });
             }
         }
     }
@@ -232,7 +235,8 @@ public class HypeTrain implements MountBehavior, Listener {
             if (location != null) {
                 location.getWorld().spawnParticle(Particle.CLOUD, location, 3, 0.0, 0.0, 0.0, 0.0);
             }
-            trainData.nmsEntity().getBukkitEntity().remove();
+            Entity carriage = trainData.nmsEntity().getBukkitEntity();
+            Scheduler.run(carriage, carriage::remove);
         }
         carriages.clear();
     }

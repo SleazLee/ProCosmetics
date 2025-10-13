@@ -15,6 +15,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.version.BukkitVersion;
 import se.file14.procosmetics.util.version.VersionUtil;
 
@@ -35,7 +36,8 @@ public class FleshHook implements GadgetBehavior {
     @Override
     public InteractionResult onInteract(CosmeticContext<GadgetType> context, @Nullable Block clickedBlock, @Nullable Vector clickedPosition) {
         if (item != null) {
-            item.remove();
+            Item existing = item;
+            Scheduler.run(existing, existing::remove);
         }
         location = context.getPlayer().getEyeLocation();
 
@@ -106,8 +108,9 @@ public class FleshHook implements GadgetBehavior {
 
     private void despawn() {
         if (item != null) {
-            item.remove();
+            Item existing = item;
             item = null;
+            Scheduler.run(existing, existing::remove);
         }
     }
 }

@@ -20,6 +20,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.LocationUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 
@@ -112,8 +113,9 @@ public class EtherealPearl implements GadgetBehavior, Listener {
 
     private void despawn() {
         if (enderPearl != null) {
-            enderPearl.remove();
+            EnderPearl pearl = enderPearl;
             enderPearl = null;
+            Scheduler.run(pearl, pearl::remove);
         }
     }
 

@@ -21,6 +21,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -146,7 +147,10 @@ public class Cowboy implements GadgetBehavior, Listener {
     }
 
     private void despawnArmorStand() {
-        armorStand.remove();
-        armorStand = null;
+        if (armorStand != null) {
+            Entity stand = armorStand;
+            armorStand = null;
+            Scheduler.run(stand, stand::remove);
+        }
     }
 }

@@ -15,6 +15,7 @@ import se.file14.procosmetics.api.cosmetic.CosmeticContext;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 
@@ -83,8 +84,9 @@ public class WitherMissile implements GadgetBehavior, Listener {
 
     private void despawn() {
         if (witherSkull != null) {
-            witherSkull.remove();
+            WitherSkull skull = witherSkull;
             witherSkull = null;
+            Scheduler.run(skull, skull::remove);
         }
     }
 

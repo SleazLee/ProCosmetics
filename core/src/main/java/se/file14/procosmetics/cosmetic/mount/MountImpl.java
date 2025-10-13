@@ -24,6 +24,7 @@ import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.cosmetic.CosmeticImpl;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 public class MountImpl extends CosmeticImpl<MountType, MountBehavior> implements Mount {
 
@@ -74,9 +75,12 @@ public class MountImpl extends CosmeticImpl<MountType, MountBehavior> implements
         }
 
         if (entity != null) {
-            entity.eject();
-            entity.remove();
+            Entity entityToRemove = entity;
             entity = null;
+            Scheduler.run(entityToRemove, () -> {
+                entityToRemove.eject();
+                entityToRemove.remove();
+            });
         }
     }
 
@@ -141,7 +145,8 @@ public class MountImpl extends CosmeticImpl<MountType, MountBehavior> implements
     @Override
     public void spawn(Location location) {
         if (entity != null) {
-            entity.remove();
+            Entity previousEntity = entity;
+            Scheduler.run(previousEntity, previousEntity::remove);
         }
         entity = location.getWorld().spawn(location, cosmeticType.getEntityType().getEntityClass(), entity -> {
             entity.setCustomName(SERIALIZER.serialize(user.translate(

@@ -65,8 +65,9 @@ public class Slide implements GadgetBehavior, Listener {
     public void onUpdate(CosmeticContext<GadgetType> context) {
         if (seat != null) {
             if (seat.getBukkitEntity().getPassengers().isEmpty()) {
-                seat.getBukkitEntity().remove();
+                ArmorStand seatEntity = (ArmorStand) seat.getBukkitEntity();
                 seat = null;
+                Scheduler.run(seatEntity, seatEntity::remove);
                 return;
             }
             double movementAngle = FastMathUtil.toRadians(ticks) * 4;
@@ -85,7 +86,9 @@ public class Slide implements GadgetBehavior, Listener {
 
             if (ticks == 44) {
                 Entity passenger = seat.getBukkitEntity().getPassenger();
-                seat.getBukkitEntity().remove();
+                ArmorStand seatEntity = (ArmorStand) seat.getBukkitEntity();
+                seat = null;
+                Scheduler.run(seatEntity, seatEntity::remove);
 
                 // Must run 1 tick later. Cannot apply velocity on 1.19.4+ in the same tick as the entity remove
                 Scheduler.runLater(center, () -> {
@@ -94,7 +97,6 @@ public class Slide implements GadgetBehavior, Listener {
                                 center.getDirection().multiply(0.5d).add(new Vector(0.0d, 0.4d, 0.0d))));
                     }
                 }, 1L);
-                seat = null;
             }
         }
     }
@@ -104,8 +106,9 @@ public class Slide implements GadgetBehavior, Listener {
         structure.remove();
 
         if (seat != null) {
-            seat.getBukkitEntity().remove();
+            ArmorStand seatEntity = (ArmorStand) seat.getBukkitEntity();
             seat = null;
+            Scheduler.run(seatEntity, seatEntity::remove);
         }
         plate = null;
         center = null;

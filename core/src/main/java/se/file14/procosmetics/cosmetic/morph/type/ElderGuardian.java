@@ -17,6 +17,7 @@ import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.cosmetic.morph.FlyableMorph;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 
@@ -62,8 +63,9 @@ public class ElderGuardian extends FlyableMorph {
                         }
                     }
                 }
-                armorStand.remove();
+                ArmorStand existing = armorStand;
                 armorStand = null;
+                Scheduler.run(existing, existing::remove);
                 tick = 0;
             }
         }
@@ -103,8 +105,9 @@ public class ElderGuardian extends FlyableMorph {
         super.onUnequip(context);
 
         if (armorStand != null) {
-            armorStand.remove();
+            ArmorStand existing = armorStand;
             armorStand = null;
+            Scheduler.run(existing, existing::remove);
         }
         tick = 0;
     }

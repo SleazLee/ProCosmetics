@@ -3,6 +3,7 @@ package se.file14.procosmetics.util;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.scheduler.BukkitTask;
 import se.file14.procosmetics.ProCosmeticsPlugin;
 
@@ -170,6 +171,28 @@ public final class Scheduler {
         } else {
             Bukkit.getScheduler().runTask(plugin(), runnable);
         }
+    }
+
+    /**
+     * Runs a task using the scheduler bound to an entity's region when Folia is available.
+     *
+     * <p>If the entity is {@code null}, the task will fall back to the global scheduler.</p>
+     *
+     * @param entity   the entity providing the scheduling context
+     * @param runnable the task to run
+     */
+    public static void run(Entity entity, Runnable runnable) {
+        if (entity == null) {
+            run(runnable);
+            return;
+        }
+
+        if (foliaEnabled) {
+            entity.getScheduler().run(plugin(), task -> runnable.run(), () -> run(runnable));
+            return;
+        }
+
+        Bukkit.getScheduler().runTask(plugin(), runnable);
     }
 
     /**
