@@ -9,6 +9,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.animal.horse.Horse;
@@ -27,7 +28,6 @@ import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
@@ -88,7 +88,11 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
             return;
         }
         for (Player player : players) {
-            ((CraftPlayer) player).getHandle().connection.send(packet);
+            ServerPlayer serverPlayer = (ServerPlayer) ReflectionUtil.getHandle(player);
+
+            if (serverPlayer != null) {
+                serverPlayer.connection.send(packet);
+            }
         }
     }
 
@@ -98,7 +102,11 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
             return;
         }
         for (Player player : entityTracker.getViewers()) {
-            ((CraftPlayer) player).getHandle().connection.send(packet);
+            ServerPlayer serverPlayer = (ServerPlayer) ReflectionUtil.getHandle(player);
+
+            if (serverPlayer != null) {
+                serverPlayer.connection.send(packet);
+            }
         }
     }
 
@@ -291,7 +299,13 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     @Override
     public void moveRide(Player player) {
-        LivingEntity entityLivingPlayer = ((CraftPlayer) player).getHandle();
+        ServerPlayer serverPlayer = (ServerPlayer) ReflectionUtil.getHandle(player);
+
+        if (serverPlayer == null) {
+            return;
+        }
+
+        LivingEntity entityLivingPlayer = serverPlayer;
         Input input = player.getCurrentInput();
         float forward = 0.0f;
         float strafe = 0.0f;
