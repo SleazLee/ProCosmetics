@@ -7,6 +7,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 import se.file14.procosmetics.ProCosmeticsPlugin;
 import se.file14.procosmetics.api.nms.EntityTracker;
@@ -15,10 +16,13 @@ import se.file14.procosmetics.nms.entitytype.CachedEntityType;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class NMSEntityImpl<T> implements NMSEntity {
 
     private static final String TEAM_NAME = "PROCOSMETICS";
+    private static final AtomicBoolean SCOREBOARD_SUPPORTED = new AtomicBoolean(detectInitialScoreboardSupport());
+    private static final AtomicBoolean SCOREBOARD_WARNING_LOGGED = new AtomicBoolean(false);
     private static final double MAXIMUM_DISTANCE_SQUARED_BEFORE_TELEPORT = 16 * 16;
     private static final double MAXIMUM_DISTANCE_SQUARED_BEFORE_PATH_FINDING = 5 * 5;
 
@@ -274,31 +278,63 @@ public abstract class NMSEntityImpl<T> implements NMSEntity {
 
     @Override
     public void addCollision(Player player) {
+        if (!isScoreboardCollisionHandlingEnabled()) {
+            return;
+        }
+
         Team team = player.getScoreboard().getTeam(TEAM_NAME);
 
         if (team == null) {
             return;
         }
-        Scoreboard mainScoreboard = ProCosmeticsPlugin.getPlugin().getServer().getScoreboardManager().getMainScoreboard();
+        Scoreboard mainScoreboard;
+
+        try {
+            ScoreboardManager scoreboardManager = ProCosmeticsPlugin.getPlugin().getServer().getScoreboardManager();
+
+            if (scoreboardManager == null) {
+                disableScoreboardCollisionHandling();
+                return;
+            }
+
+            mainScoreboard = scoreboardManager.getMainScoreboard();
+        } catch (UnsupportedOperationException exception) {
+            disableScoreboardCollisionHandling();
+            return;
+        }
+
         Entity bukkitEntity = getBukkitEntity();
 
         if (bukkitEntity != null) {
             if (player.getScoreboard().equals(mainScoreboard) && team.getSize() > 1) {
                 team.removeEntry(bukkitEntity.getUniqueId().toString());
             } else {
-                team.unregister();
+                try {
+                    team.unregister();
+                } catch (UnsupportedOperationException exception) {
+                    disableScoreboardCollisionHandling();
+                }
             }
         }
     }
 
     @Override
     public void removeCollision(Player player) {
+        if (!isScoreboardCollisionHandlingEnabled()) {
+            return;
+        }
+
         Scoreboard scoreboard = player.getScoreboard();
         Team team = scoreboard.getTeam(TEAM_NAME);
 
         if (team == null) {
-            team = scoreboard.registerNewTeam(TEAM_NAME);
-            team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+            try {
+                team = scoreboard.registerNewTeam(TEAM_NAME);
+                team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+            } catch (UnsupportedOperationException exception) {
+                disableScoreboardCollisionHandling();
+                return;
+            }
         }
         Entity bukkitEntity = getBukkitEntity();
 
@@ -306,8 +342,48 @@ public abstract class NMSEntityImpl<T> implements NMSEntity {
             String uuid = bukkitEntity.getUniqueId().toString();
 
             if (!team.hasEntry(uuid)) {
-                team.addEntry(uuid);
+                try {
+                    team.addEntry(uuid);
+                } catch (UnsupportedOperationException exception) {
+                    disableScoreboardCollisionHandling();
+                }
             }
+        }
+    }
+
+    private static boolean detectInitialScoreboardSupport() {
+        try {
+            if ("Folia".equalsIgnoreCase(ProCosmeticsPlugin.getPlugin().getServer().getName())) {
+                return false;
+            }
+
+            ScoreboardManager scoreboardManager = ProCosmeticsPlugin.getPlugin().getServer().getScoreboardManager();
+
+            return scoreboardManager != null;
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private static boolean isScoreboardCollisionHandlingEnabled() {
+        boolean enabled = SCOREBOARD_SUPPORTED.get();
+
+        if (!enabled) {
+            logScoreboardDisabledWarning();
+        }
+
+        return enabled;
+    }
+
+    private static void disableScoreboardCollisionHandling() {
+        if (SCOREBOARD_SUPPORTED.compareAndSet(true, false)) {
+            logScoreboardDisabledWarning();
+        }
+    }
+
+    private static void logScoreboardDisabledWarning() {
+        if (SCOREBOARD_WARNING_LOGGED.compareAndSet(false, true)) {
+            ProCosmeticsPlugin.getPlugin().getLogger().warning("Scoreboard based collision handling is disabled because the current server implementation does not support scoreboards or teams.");
         }
     }
 
