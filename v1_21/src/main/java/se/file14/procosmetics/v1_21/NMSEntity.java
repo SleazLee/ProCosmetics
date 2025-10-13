@@ -26,10 +26,6 @@ import org.bukkit.Input;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
@@ -42,6 +38,7 @@ import se.file14.procosmetics.util.ReflectionUtil;
 import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -53,6 +50,9 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
     private static final List<Pose> POSES = List.of(Pose.values());
 
     private static Constructor<FallingBlockEntity> fallingBlockConstructor;
+    private static final Method CRAFT_CHAT_MESSAGE_FROM_STRING_OR_NULL = resolveCraftChatMessageConverter();
+    private static final Method CRAFT_ITEM_STACK_AS_NMS_COPY = resolveCraftItemStackConverter();
+    private static final List<Method> BUKKIT_ENTITY_ACCESSORS = resolveBukkitEntityAccessors();
 
     private Entity entity;
     private Entity leashHolder;
@@ -70,7 +70,7 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
                 fallingBlockConstructor = FallingBlockEntity.class.getDeclaredConstructor(Level.class, double.class, double.class, double.class, BlockState.class);
                 fallingBlockConstructor.setAccessible(true);
             }
-            entity = fallingBlockConstructor.newInstance((Level) ReflectionUtil.getHandle(world), 0.0d, 0.0d, 0.0d, ((CraftBlockData) blockData).getState());
+            entity = fallingBlockConstructor.newInstance((Level) ReflectionUtil.getHandle(world), 0.0d, 0.0d, 0.0d, ((org.bukkit.craftbukkit.block.data.CraftBlockData) blockData).getState());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             e.printStackTrace();
@@ -79,7 +79,13 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     public NMSEntity(org.bukkit.entity.Entity realEntity) {
         super(realEntity);
-        entity = ((CraftEntity) realEntity).getHandle();
+        Entity handle = toNmsEntity(realEntity);
+
+        if (handle == null) {
+            throw new IllegalStateException("Unable to obtain NMS handle for " + realEntity + ".");
+        }
+
+        entity = handle;
     }
 
     @Override
@@ -177,35 +183,20 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
     @Override
     @Nullable
     public ClientboundSetEquipmentPacket getEntityEquipmentPacket() {
-        if (entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity livingEntity) {
+        org.bukkit.entity.Entity bukkitEntity = getBukkitEntityInternal(entity);
+
+        if (bukkitEntity instanceof org.bukkit.entity.LivingEntity livingEntity) {
             List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList = new ArrayList<>();
             EntityEquipment equipment = livingEntity.getEquipment();
 
             if (equipment != null) {
-                ItemStack helmet = equipment.getHelmet();
-                if (helmet != null) {
-                    equipmentList.add(Pair.of(EquipmentSlot.HEAD, CraftItemStack.asNMSCopy(helmet)));
-                }
-                ItemStack chest = equipment.getChestplate();
-                if (chest != null) {
-                    equipmentList.add(Pair.of(EquipmentSlot.CHEST, CraftItemStack.asNMSCopy(chest)));
-                }
-                ItemStack legs = equipment.getLeggings();
-                if (legs != null) {
-                    equipmentList.add(Pair.of(EquipmentSlot.LEGS, CraftItemStack.asNMSCopy(legs)));
-                }
-                ItemStack boots = equipment.getBoots();
-                if (boots != null) {
-                    equipmentList.add(Pair.of(EquipmentSlot.FEET, CraftItemStack.asNMSCopy(boots)));
-                }
-                ItemStack mainHand = equipment.getItemInMainHand();
-                if (mainHand != null) {
-                    equipmentList.add(Pair.of(EquipmentSlot.MAINHAND, CraftItemStack.asNMSCopy(mainHand)));
-                }
-                ItemStack offHand = equipment.getItemInOffHand();
-                if (offHand != null) {
-                    equipmentList.add(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(offHand)));
-                }
+                appendEquipment(equipmentList, EquipmentSlot.HEAD, equipment.getHelmet());
+                appendEquipment(equipmentList, EquipmentSlot.CHEST, equipment.getChestplate());
+                appendEquipment(equipmentList, EquipmentSlot.LEGS, equipment.getLeggings());
+                appendEquipment(equipmentList, EquipmentSlot.FEET, equipment.getBoots());
+                appendEquipment(equipmentList, EquipmentSlot.MAINHAND, equipment.getItemInMainHand());
+                appendEquipment(equipmentList, EquipmentSlot.OFFHAND, equipment.getItemInOffHand());
+
                 return new ClientboundSetEquipmentPacket(entity.getId(), equipmentList);
             }
         }
@@ -426,7 +417,9 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     @Override
     public void setMainHand(@Nullable ItemStack itemStack) {
-        if (entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity livingEntity) {
+        org.bukkit.entity.Entity bukkitEntity = getBukkitEntityInternal(entity);
+
+        if (bukkitEntity instanceof org.bukkit.entity.LivingEntity livingEntity) {
             EntityEquipment equipment = livingEntity.getEquipment();
             if (equipment != null) {
                 equipment.setItemInMainHand(itemStack);
@@ -436,7 +429,9 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     @Override
     public void setOffHand(@Nullable ItemStack itemStack) {
-        if (entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity livingEntity) {
+        org.bukkit.entity.Entity bukkitEntity = getBukkitEntityInternal(entity);
+
+        if (bukkitEntity instanceof org.bukkit.entity.LivingEntity livingEntity) {
             EntityEquipment equipment = livingEntity.getEquipment();
             if (equipment != null) {
                 equipment.setItemInOffHand(itemStack);
@@ -446,7 +441,9 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     @Override
     public void setHelmet(@Nullable ItemStack itemStack) {
-        if (entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity livingEntity) {
+        org.bukkit.entity.Entity bukkitEntity = getBukkitEntityInternal(entity);
+
+        if (bukkitEntity instanceof org.bukkit.entity.LivingEntity livingEntity) {
             EntityEquipment equipment = livingEntity.getEquipment();
             if (equipment != null) {
                 equipment.setHelmet(itemStack);
@@ -456,7 +453,9 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     @Override
     public void setChestplate(@Nullable ItemStack itemStack) {
-        if (entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity livingEntity) {
+        org.bukkit.entity.Entity bukkitEntity = getBukkitEntityInternal(entity);
+
+        if (bukkitEntity instanceof org.bukkit.entity.LivingEntity livingEntity) {
             EntityEquipment equipment = livingEntity.getEquipment();
             if (equipment != null) {
                 equipment.setChestplate(itemStack);
@@ -466,7 +465,9 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     @Override
     public void setLeggings(@Nullable ItemStack itemStack) {
-        if (entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity livingEntity) {
+        org.bukkit.entity.Entity bukkitEntity = getBukkitEntityInternal(entity);
+
+        if (bukkitEntity instanceof org.bukkit.entity.LivingEntity livingEntity) {
             EntityEquipment equipment = livingEntity.getEquipment();
             if (equipment != null) {
                 equipment.setLeggings(itemStack);
@@ -476,7 +477,9 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     @Override
     public void setBoots(@Nullable ItemStack itemStack) {
-        if (entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity livingEntity) {
+        org.bukkit.entity.Entity bukkitEntity = getBukkitEntityInternal(entity);
+
+        if (bukkitEntity instanceof org.bukkit.entity.LivingEntity livingEntity) {
             EntityEquipment equipment = livingEntity.getEquipment();
             if (equipment != null) {
                 equipment.setBoots(itemStack);
@@ -529,12 +532,12 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
     @Override
     public void setCustomName(@Nullable Component component) {
         entity.setCustomNameVisible(true);
-        entity.setCustomName(CraftChatMessage.fromStringOrNull(SERIALIZER.serialize(component)));
+        entity.setCustomName(component == null ? null : toNmsComponent(component));
     }
 
     @Override
     public void setLeashHolder(@Nullable org.bukkit.entity.Entity entity2) {
-        leashHolder = ((CraftEntity) entity2).getHandle();
+        leashHolder = toNmsEntity(entity2);
     }
 
     @Override
@@ -573,7 +576,7 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
     @Override
     public void setEntityItemStack(ItemStack itemStack) {
         if (entity instanceof ItemEntity itemEntity) {
-            itemEntity.setItem(CraftItemStack.asNMSCopy(itemStack));
+            itemEntity.setItem(toNmsItemStackOrEmpty(itemStack));
         }
     }
 
@@ -619,6 +622,171 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
 
     @Override
     public org.bukkit.entity.Entity getBukkitEntity() {
-        return entity.getBukkitEntity();
+        return getBukkitEntityInternal(entity);
+    }
+
+    private static void appendEquipment(List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList,
+                                        EquipmentSlot slot,
+                                        @Nullable ItemStack itemStack) {
+        if (itemStack == null || itemStack.getType().isAir()) {
+            return;
+        }
+
+        net.minecraft.world.item.ItemStack nmsStack = toNmsItemStack(itemStack);
+
+        if (nmsStack != null && !nmsStack.isEmpty()) {
+            equipmentList.add(Pair.of(slot, nmsStack));
+        }
+    }
+
+    @Nullable
+    private static net.minecraft.world.item.ItemStack toNmsItemStack(@Nullable ItemStack itemStack) {
+        if (itemStack == null || CRAFT_ITEM_STACK_AS_NMS_COPY == null) {
+            return null;
+        }
+
+        try {
+            Object result = CRAFT_ITEM_STACK_AS_NMS_COPY.invoke(null, itemStack);
+
+            if (result instanceof net.minecraft.world.item.ItemStack nmsStack) {
+                return nmsStack;
+            }
+        } catch (IllegalAccessException exception) {
+            exception.printStackTrace();
+        } catch (InvocationTargetException exception) {
+            Throwable cause = exception.getCause();
+
+            if (cause != null) {
+                cause.printStackTrace();
+            } else {
+                exception.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    private static net.minecraft.world.item.ItemStack toNmsItemStackOrEmpty(@Nullable ItemStack itemStack) {
+        net.minecraft.world.item.ItemStack nmsStack = toNmsItemStack(itemStack);
+        return nmsStack != null ? nmsStack : net.minecraft.world.item.ItemStack.EMPTY;
+    }
+
+    @Nullable
+    private static net.minecraft.network.chat.Component toNmsComponent(Component component) {
+        if (CRAFT_CHAT_MESSAGE_FROM_STRING_OR_NULL == null) {
+            return null;
+        }
+
+        try {
+            Object result = CRAFT_CHAT_MESSAGE_FROM_STRING_OR_NULL.invoke(null, SERIALIZER.serialize(component));
+
+            if (result instanceof net.minecraft.network.chat.Component component1) {
+                return component1;
+            }
+        } catch (IllegalAccessException exception) {
+            exception.printStackTrace();
+        } catch (InvocationTargetException exception) {
+            Throwable cause = exception.getCause();
+
+            if (cause != null) {
+                cause.printStackTrace();
+            } else {
+                exception.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Entity toNmsEntity(@Nullable org.bukkit.entity.Entity entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        Object handle = ReflectionUtil.getHandle(entity);
+
+        if (handle instanceof Entity nmsEntity) {
+            return nmsEntity;
+        }
+        return null;
+    }
+
+    @Nullable
+    private static org.bukkit.entity.Entity getBukkitEntityInternal(@Nullable Entity entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        for (Method accessor : BUKKIT_ENTITY_ACCESSORS) {
+            if (accessor == null) {
+                continue;
+            }
+
+            try {
+                Object result = accessor.invoke(entity);
+
+                if (result instanceof org.bukkit.entity.Entity bukkitEntity) {
+                    return bukkitEntity;
+                }
+            } catch (IllegalAccessException exception) {
+                exception.printStackTrace();
+            } catch (InvocationTargetException exception) {
+                Throwable cause = exception.getCause();
+
+                if (cause instanceof AbstractMethodError) {
+                    continue;
+                }
+
+                if (cause != null) {
+                    cause.printStackTrace();
+                } else {
+                    exception.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Method resolveCraftChatMessageConverter() {
+        Class<?> craftChatMessageClass = ReflectionUtil.getBukkitClass("util.CraftChatMessage");
+
+        if (craftChatMessageClass != null) {
+            return ReflectionUtil.getMethod(craftChatMessageClass, "fromStringOrNull", String.class);
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Method resolveCraftItemStackConverter() {
+        Class<?> craftItemStackClass = ReflectionUtil.getBukkitClass("inventory.CraftItemStack");
+
+        if (craftItemStackClass != null) {
+            return ReflectionUtil.getMethod(craftItemStackClass, "asNMSCopy", ItemStack.class);
+        }
+        return null;
+    }
+
+    private static List<Method> resolveBukkitEntityAccessors() {
+        List<Method> accessors = new ArrayList<>();
+
+        Method accessor = ReflectionUtil.getMethod(Entity.class, "getBukkitEntity");
+
+        if (accessor != null) {
+            accessors.add(accessor);
+        }
+
+        accessor = ReflectionUtil.getMethod(Entity.class, "getBukkitEntityRaw");
+
+        if (accessor != null) {
+            accessors.add(accessor);
+        }
+
+        accessor = ReflectionUtil.getDeclaredMethod(Entity.class, "bridge$getBukkitEntity");
+
+        if (accessor != null) {
+            accessors.add(accessor);
+        }
+
+        return accessors;
     }
 }
