@@ -22,6 +22,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -62,12 +63,12 @@ public class TNT implements GadgetBehavior, Listener {
     @Override
     public void onUnequip(CosmeticContext<GadgetType> context) {
         for (Entity entity : entities) {
-            entity.remove();
+            Scheduler.run(entity, entity::remove);
         }
         entities.clear();
 
         for (FallingBlock fallingBlock : fallingBlocks) {
-            fallingBlock.remove();
+            Scheduler.run(fallingBlock, fallingBlock::remove);
         }
         fallingBlocks.clear();
     }

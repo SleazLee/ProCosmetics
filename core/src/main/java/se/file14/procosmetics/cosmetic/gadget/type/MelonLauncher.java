@@ -47,8 +47,9 @@ public class MelonLauncher implements GadgetBehavior, Listener {
     @Override
     public InteractionResult onInteract(CosmeticContext<GadgetType> context, @Nullable Block clickedBlock, @Nullable Vector clickedPosition) {
         if (item != null && item.isValid()) {
-            item.remove();
+            Item existing = item;
             item = null;
+            Scheduler.run(existing, existing::remove);
         }
         Player player = context.getPlayer();
         Location location = player.getEyeLocation();
@@ -127,15 +128,16 @@ public class MelonLauncher implements GadgetBehavior, Listener {
             pickupPlayer.addPotionEffect(POTION_EFFECT);
             pickupPlayer.playSound(pickupPlayer.getLocation(), Sound.ENTITY_GENERIC_EAT, 0.5f, 1.0f);
 
-            pickupItem.remove();
+            Scheduler.run(pickupItem, pickupItem::remove);
             event.setCancelled(true);
         }
     }
 
     private void despawn() {
         if (item != null) {
-            item.remove();
+            Item existing = item;
             item = null;
+            Scheduler.run(existing, existing::remove);
         }
     }
 
@@ -145,9 +147,11 @@ public class MelonLauncher implements GadgetBehavior, Listener {
                 slices.remove(slice);
             }
             if (slice.isValid()) {
-                Location location = slice.getLocation();
-                location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location.add(0.0d, 0.2d, 0.0d), 0);
-                slice.remove();
+                Scheduler.run(slice, () -> {
+                    Location location = slice.getLocation();
+                    location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location.add(0.0d, 0.2d, 0.0d), 0);
+                    slice.remove();
+                });
             }
         }
         items.clear();

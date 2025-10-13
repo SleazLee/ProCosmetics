@@ -170,8 +170,11 @@ public class CoinPartyBomb implements GadgetBehavior, Listener {
 
     private void despawnItems() {
         for (Item item : items) {
-            location.getWorld().spawnParticle(Particle.LARGE_SMOKE, item.getLocation(location), 0);
-            item.remove();
+            Scheduler.run(item, () -> {
+                Location itemLocation = item.getLocation();
+                itemLocation.getWorld().spawnParticle(Particle.LARGE_SMOKE, itemLocation, 0);
+                item.remove();
+            });
         }
         items.clear();
     }
@@ -195,11 +198,13 @@ public class CoinPartyBomb implements GadgetBehavior, Listener {
     public void onCoinPickup(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player pickupPlayer && items.remove(event.getItem())) {
             event.setCancelled(true);
-            event.getItem().remove();
-
-            Location pickupLocation = event.getItem().getLocation().add(0.0d, 0.4d, 0.0d);
-            pickupPlayer.getWorld().playSound(pickupLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 2.0f);
-            location.getWorld().spawnParticle(Particle.FIREWORK, pickupLocation.add(0.0d, 0.4d, 0.0d), 0);
+            Item coin = event.getItem();
+            Scheduler.run(coin, () -> {
+                Location pickupLocation = coin.getLocation().add(0.0d, 0.4d, 0.0d);
+                pickupPlayer.getWorld().playSound(pickupLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 2.0f);
+                location.getWorld().spawnParticle(Particle.FIREWORK, pickupLocation.add(0.0d, 0.4d, 0.0d), 0);
+                coin.remove();
+            });
 
             User user = plugin.getUserManager().getConnected(pickupPlayer);
 

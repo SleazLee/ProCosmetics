@@ -19,6 +19,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.material.Materials;
 
 import javax.annotation.Nullable;
@@ -62,7 +63,7 @@ public class Paintball implements GadgetBehavior, Listener {
     @Override
     public void onUnequip(CosmeticContext<GadgetType> context) {
         for (Entity entity : balls) {
-            entity.remove();
+            Scheduler.run(entity, entity::remove);
         }
         balls.clear();
     }
@@ -96,7 +97,7 @@ public class Paintball implements GadgetBehavior, Listener {
                     }
                 }
             }
-            snowball.remove();
+            Scheduler.run(snowball, snowball::remove);
             event.setCancelled(true);
         }
     }

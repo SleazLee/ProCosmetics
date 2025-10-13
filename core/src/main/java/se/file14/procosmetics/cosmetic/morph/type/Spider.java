@@ -85,7 +85,7 @@ public class Spider implements MorphBehavior {
                             0.1d,
                             ITEMSTACK
                     );
-                    item.remove();
+                    Scheduler.run(item, item::remove);
                     iterator.remove();
                 } else {
                     Player hitPlayer = MathUtil.getClosestPlayerFromLocation(location, 1.0d);
@@ -103,7 +103,7 @@ public class Spider implements MorphBehavior {
                                 0.1d,
                                 ITEMSTACK
                         );
-                        item.remove();
+                        Scheduler.run(item, item::remove);
                         iterator.remove();
                     }
                 }
@@ -133,7 +133,7 @@ public class Spider implements MorphBehavior {
 
     private void clearItems() {
         for (Item item : items) {
-            item.remove();
+            Scheduler.run(item, item::remove);
         }
         items.clear();
     }

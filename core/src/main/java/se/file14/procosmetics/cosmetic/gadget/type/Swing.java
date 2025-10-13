@@ -121,8 +121,9 @@ public class Swing implements GadgetBehavior {
         amplifier = 0.0f;
 
         if (seat != null) {
-            seat.getBukkitEntity().remove();
+            Entity seatEntity = seat.getBukkitEntity();
             seat = null;
+            Scheduler.run(seatEntity, seatEntity::remove);
         }
         tracker.destroy();
     }

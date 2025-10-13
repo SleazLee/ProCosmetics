@@ -70,7 +70,7 @@ public class BatBlaster implements GadgetBehavior {
                     MathUtil.pushEntity(hitPlayer, location, 0.3d, 0.2d);
                     location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location, 0);
                     entity.getWorld().playSound(location, Sound.ENTITY_BAT_HURT, 0.3f, 1.0f);
-                    entity.remove();
+                    Scheduler.run(entity, entity::remove);
                     iterator.remove();
                 }
             }
@@ -80,8 +80,11 @@ public class BatBlaster implements GadgetBehavior {
     @Override
     public void onUnequip(CosmeticContext<GadgetType> context) {
         for (Entity entity : bats) {
-            location.getWorld().spawnParticle(Particle.LARGE_SMOKE, entity.getLocation(location), 0);
-            entity.remove();
+            Scheduler.run(entity, () -> {
+                Location entityLocation = entity.getLocation();
+                entityLocation.getWorld().spawnParticle(Particle.LARGE_SMOKE, entityLocation, 0);
+                entity.remove();
+            });
         }
         bats.clear();
     }

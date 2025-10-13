@@ -12,6 +12,7 @@ import se.file14.procosmetics.api.cosmetic.CosmeticContext;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.api.user.User;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 
@@ -85,7 +86,7 @@ public class GrapplingHook implements GadgetBehavior, Listener {
 
             thrownHook = false;
 
-            hook.remove();
+            Scheduler.run(hook, hook::remove);
             event.setCancelled(true);
         }
     }

@@ -112,8 +112,11 @@ public class Slime implements MorphBehavior, Listener {
     }
 
     private void removeBlock() {
-        fallingBlock.getWorld().playEffect(fallingBlock.getLocation(), Effect.STEP_SOUND, fallingBlock.getBlockData().getMaterial());
-        fallingBlock.remove();
+        FallingBlock block = fallingBlock;
         fallingBlock = null;
+        Scheduler.run(block, () -> {
+            block.getWorld().playEffect(block.getLocation(), Effect.STEP_SOUND, block.getBlockData().getMaterial());
+            block.remove();
+        });
     }
 }

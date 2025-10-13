@@ -69,8 +69,9 @@ public class Cannon implements GadgetBehavior {
         }
 
         if (fireball != null && fireball.getTicksLived() > 200) {
-            fireball.remove();
+            Entity currentFireball = fireball;
             fireball = null;
+            Scheduler.run(currentFireball, currentFireball::remove);
         }
     }
 
@@ -79,8 +80,9 @@ public class Cannon implements GadgetBehavior {
         structure.remove();
 
         if (fireball != null) {
-            fireball.remove();
+            Entity currentFireball = fireball;
             fireball = null;
+            Scheduler.run(currentFireball, currentFireball::remove);
         }
         tick = 0;
         shootLocation = null;

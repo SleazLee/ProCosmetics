@@ -98,15 +98,19 @@ public class ExplosiveSheep implements GadgetBehavior {
 
     private void despawnSheep() {
         if (sheep != null) {
-            sheep.remove();
+            Sheep sheepToRemove = sheep;
             sheep = null;
+            Scheduler.run(sheepToRemove, sheepToRemove::remove);
         }
     }
 
     private void removeBabies() {
         for (Entity entity : babies) {
-            location.getWorld().spawnParticle(Particle.CLOUD, entity.getLocation(location).add(0.0d, 0.3d, 0.0d), 0);
-            entity.remove();
+            Scheduler.run(entity, () -> {
+                Location entityLocation = entity.getLocation().add(0.0d, 0.3d, 0.0d);
+                entityLocation.getWorld().spawnParticle(Particle.CLOUD, entityLocation, 0);
+                entity.remove();
+            });
         }
         babies.clear();
     }

@@ -16,6 +16,7 @@ import se.file14.procosmetics.api.cosmetic.morph.MorphBehavior;
 import se.file14.procosmetics.api.cosmetic.morph.MorphType;
 import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.util.MathUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 public class Witch implements MorphBehavior, Listener {
 
@@ -57,8 +58,9 @@ public class Witch implements MorphBehavior, Listener {
             return;
         }
 
-        potion.remove();
+        ThrownPotion thrownPotion = potion;
         potion = null;
+        Scheduler.run(thrownPotion, thrownPotion::remove);
     }
 
     @Override

@@ -57,7 +57,8 @@ public class Zombie implements MorphBehavior, Listener {
 
             Scheduler.runLater(location, () -> {
                 if (zombie != null && zombie.isValid()) {
-                    zombie.getLocation(location);
+                    org.bukkit.entity.Zombie currentZombie = zombie;
+                    currentZombie.getLocation(location);
 
                     for (int i = 0; i < 10; i++) {
                         location.getWorld().spawnParticle(Particle.FIREWORK, location, 0,
@@ -67,9 +68,9 @@ public class Zombie implements MorphBehavior, Listener {
                                 0.1d
                         );
                     }
-                    zombie.getWorld().playSound(location, Sound.ENTITY_CHICKEN_EGG, 1.0f, 1.0f);
-                    zombie.remove();
+                    currentZombie.getWorld().playSound(location, Sound.ENTITY_CHICKEN_EGG, 1.0f, 1.0f);
                     zombie = null;
+                    Scheduler.run(currentZombie, currentZombie::remove);
                 }
             }, 160L);
         }
@@ -83,8 +84,9 @@ public class Zombie implements MorphBehavior, Listener {
     @Override
     public void onUnequip(CosmeticContext<MorphType> context) {
         if (zombie != null) {
-            zombie.remove();
+            org.bukkit.entity.Zombie currentZombie = zombie;
             zombie = null;
+            Scheduler.run(currentZombie, currentZombie::remove);
         }
     }
 
@@ -112,8 +114,9 @@ public class Zombie implements MorphBehavior, Listener {
 
             zombie.getWorld().playSound(zombie, Sound.ENTITY_CHICKEN_EGG, 1.0f, 1.0f);
 
-            zombie.remove();
+            org.bukkit.entity.Zombie currentZombie = zombie;
             zombie = null;
+            Scheduler.run(currentZombie, currentZombie::remove);
 
             event.setCancelled(true);
         }

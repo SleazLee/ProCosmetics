@@ -13,6 +13,7 @@ import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 public class EntityListener implements Listener {
 
@@ -133,7 +134,7 @@ public class EntityListener implements Listener {
         Entity hitEntity = event.getHitEntity();
 
         if (entity instanceof org.bukkit.entity.FishHook && hitEntity != null && MetadataUtil.isCustomEntity(hitEntity)) {
-            entity.remove();
+            Scheduler.run(entity, entity::remove);
         }
     }
 

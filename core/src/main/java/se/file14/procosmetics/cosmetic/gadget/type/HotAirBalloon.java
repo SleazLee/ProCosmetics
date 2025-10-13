@@ -107,8 +107,9 @@ public class HotAirBalloon implements GadgetBehavior {
         seatLocation.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, seatLocation.add(0.0d, 5.0d, 0.0d), 1);
 
         if (seat != null) {
-            seat.getBukkitEntity().remove();
+            ArmorStand seatEntity = (ArmorStand) seat.getBukkitEntity();
             seat = null;
+            Scheduler.run(seatEntity, seatEntity::remove);
         }
         speed = 0.0d;
         center = null;

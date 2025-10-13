@@ -33,7 +33,8 @@ public class SoccerBall implements GadgetBehavior {
     @Override
     public InteractionResult onInteract(CosmeticContext<GadgetType> context, @Nullable Block clickedBlock, @Nullable Vector clickedPosition) {
         if (slimeBall != null) {
-            slimeBall.remove();
+            Slime existing = slimeBall;
+            Scheduler.run(existing, existing::remove);
         }
         location = context.getPlayer().getLocation();
         location.setPitch(0.0f);
@@ -117,8 +118,9 @@ public class SoccerBall implements GadgetBehavior {
             context.getPlayer().getWorld().playSound(location, Sound.ENTITY_CHICKEN_EGG, 0.5f, 0.0f);
             location.getWorld().spawnParticle(Particle.CLOUD, location.add(0.0d, 1.0d, 0.0d), 10, 0.15f, 0.15f, 0.15f, 0.05f);
 
-            slimeBall.remove();
+            Slime existing = slimeBall;
             slimeBall = null;
+            Scheduler.run(existing, existing::remove);
         }
     }
 

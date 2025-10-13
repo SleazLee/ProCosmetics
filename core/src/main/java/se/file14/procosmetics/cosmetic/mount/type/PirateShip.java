@@ -20,6 +20,7 @@ import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 public class PirateShip implements MountBehavior, Listener {
 
@@ -36,8 +37,9 @@ public class PirateShip implements MountBehavior, Listener {
     @Override
     public void setupEntity(CosmeticContext<MountType> context, Entity entity, NMSEntity nmsEntity) {
         if (tnt != null) {
-            tnt.remove();
+            TNTPrimed oldTnt = tnt;
             tnt = null;
+            Scheduler.run(oldTnt, oldTnt::remove);
         }
         entity.setGravity(false);
         entity.setPassenger(context.getPlayer());
@@ -81,8 +83,9 @@ public class PirateShip implements MountBehavior, Listener {
         context.getUser().setFallDamageProtection(10);
 
         if (tnt != null) {
-            tnt.remove();
+            TNTPrimed oldTnt = tnt;
             tnt = null;
+            Scheduler.run(oldTnt, oldTnt::remove);
         }
         ship = null;
     }

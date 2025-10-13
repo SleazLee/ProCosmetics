@@ -15,6 +15,7 @@ import se.file14.procosmetics.api.cosmetic.CosmeticContext;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -74,7 +75,7 @@ public class Watergun implements GadgetBehavior {
     @Override
     public void onUnequip(CosmeticContext<GadgetType> context) {
         for (Entity entity : balls) {
-            entity.remove();
+            Scheduler.run(entity, entity::remove);
         }
         balls.clear();
     }

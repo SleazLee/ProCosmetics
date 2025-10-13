@@ -16,6 +16,7 @@ import se.file14.procosmetics.api.cosmetic.morph.MorphBehavior;
 import se.file14.procosmetics.api.cosmetic.morph.MorphType;
 import se.file14.procosmetics.api.nms.NMSEntity;
 import se.file14.procosmetics.util.MathUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 public class Olaf implements MorphBehavior, Listener {
 
@@ -49,8 +50,9 @@ public class Olaf implements MorphBehavior, Listener {
     @Override
     public void onUnequip(CosmeticContext<MorphType> context) {
         if (snowball != null) {
-            snowball.remove();
+            Snowball ball = snowball;
             snowball = null;
+            Scheduler.run(ball, ball::remove);
         }
     }
 

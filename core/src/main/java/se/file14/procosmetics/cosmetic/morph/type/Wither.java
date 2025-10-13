@@ -88,8 +88,9 @@ public class Wither extends FlyableMorph implements Listener {
 
     private void despawnSkull() {
         if (skull != null) {
-            skull.remove();
+            WitherSkull witherSkull = skull;
             skull = null;
+            Scheduler.run(witherSkull, witherSkull::remove);
         }
     }
 }
