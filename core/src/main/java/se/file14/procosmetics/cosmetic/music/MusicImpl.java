@@ -135,7 +135,7 @@ public class MusicImpl extends CosmeticImpl<MusicType, MusicBehavior> implements
         songPlayer.setTargetLocation(location);
         songPlayer.setPlaying(true);
 
-        runTaskTimer(plugin, 0L, 1L);
+        runTaskTimer(plugin, player, 0L, 1L);
     }
 
     @Override

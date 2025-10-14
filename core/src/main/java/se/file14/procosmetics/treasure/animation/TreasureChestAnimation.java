@@ -95,7 +95,7 @@ public abstract class TreasureChestAnimation extends AbstractRunnable implements
         server.getPluginManager().callEvent(new PlayerOpenTreasureEvent(user, player, treasureChest, platform.getCenter().clone()));
         server.getPluginManager().registerEvents(this, plugin.getJavaPlugin());
         server.getLogger().log(Level.INFO, user + " is opening a " + treasureChest.getKey() + " treasure chest.");
-        runTaskTimer(plugin.getJavaPlugin(), 0L, 1L);
+        runTaskTimer(plugin.getJavaPlugin(), location, 0L, 1L);
     }
 
     @Override
@@ -219,7 +219,7 @@ public abstract class TreasureChestAnimation extends AbstractRunnable implements
                         cancel();
                     }
                 }
-            }.runTaskTimer(plugin.getJavaPlugin(), 0L, rarity.getTickInterval());
+            }.runTaskTimer(plugin.getJavaPlugin(), location, 0L, rarity.getTickInterval());
         }
     }
 

@@ -51,7 +51,7 @@ public class EmoteImpl extends CosmeticImpl<EmoteType, EmoteBehavior> implements
 
         // Start the animation
         animationController.start();
-        runTaskTimer(plugin, 0L, cosmeticType.getTickInterval());
+        runTaskTimer(plugin, player, 0L, cosmeticType.getTickInterval());
     }
 
     @Override
