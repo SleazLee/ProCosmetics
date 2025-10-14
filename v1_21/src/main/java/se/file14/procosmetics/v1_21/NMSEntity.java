@@ -50,6 +50,8 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
     private static final List<Pose> POSES = List.of(Pose.values());
 
     private static Constructor<FallingBlockEntity> fallingBlockConstructor;
+    private static final Class<?> CRAFT_BLOCK_DATA_CLASS = resolveCraftBlockDataClass();
+    private static final Method CRAFT_BLOCK_DATA_GET_STATE = resolveCraftBlockDataStateAccessor();
     private static final Method CRAFT_CHAT_MESSAGE_FROM_STRING_OR_NULL = resolveCraftChatMessageConverter();
     private static final Method CRAFT_ITEM_STACK_AS_NMS_COPY = resolveCraftItemStackConverter();
     private static final List<Method> BUKKIT_ENTITY_ACCESSORS = resolveBukkitEntityAccessors();
@@ -70,7 +72,8 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
                 fallingBlockConstructor = FallingBlockEntity.class.getDeclaredConstructor(Level.class, double.class, double.class, double.class, BlockState.class);
                 fallingBlockConstructor.setAccessible(true);
             }
-            entity = fallingBlockConstructor.newInstance((Level) ReflectionUtil.getHandle(world), 0.0d, 0.0d, 0.0d, ((org.bukkit.craftbukkit.block.data.CraftBlockData) blockData).getState());
+            BlockState blockState = toBlockState(blockData);
+            entity = fallingBlockConstructor.newInstance((Level) ReflectionUtil.getHandle(world), 0.0d, 0.0d, 0.0d, blockState);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             e.printStackTrace();
@@ -86,6 +89,40 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
         }
 
         entity = handle;
+    }
+
+    private static Class<?> resolveCraftBlockDataClass() {
+        return ReflectionUtil.getBukkitClass("block.data.CraftBlockData");
+    }
+
+    private static Method resolveCraftBlockDataStateAccessor() {
+        Class<?> craftClass = CRAFT_BLOCK_DATA_CLASS;
+
+        if (craftClass == null) {
+            return null;
+        }
+
+        try {
+            Method method = craftClass.getDeclaredMethod("getState");
+            method.setAccessible(true);
+            return method;
+        } catch (NoSuchMethodException exception) {
+            exception.printStackTrace();
+        }
+        return null;
+    }
+
+    private static BlockState toBlockState(BlockData blockData) {
+        if (CRAFT_BLOCK_DATA_CLASS == null || CRAFT_BLOCK_DATA_GET_STATE == null) {
+            throw new IllegalStateException("Unable to resolve CraftBlockData class for the current server version.");
+        }
+
+        try {
+            Object craftData = CRAFT_BLOCK_DATA_CLASS.cast(blockData);
+            return (BlockState) CRAFT_BLOCK_DATA_GET_STATE.invoke(craftData);
+        } catch (ClassCastException | IllegalAccessException | InvocationTargetException exception) {
+            throw new IllegalStateException("Failed to convert BlockData to BlockState using CraftBlockData.", exception);
+        }
     }
 
     @Override
