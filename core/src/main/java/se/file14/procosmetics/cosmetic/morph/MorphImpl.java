@@ -57,7 +57,7 @@ public class MorphImpl extends CosmeticImpl<MorphType, MorphBehavior> implements
 
         player.setInvisible(true);
 
-        runTaskTimer(plugin, 0L, 1L);
+        runTaskTimer(plugin, player, 0L, 1L);
     }
 
     @Override

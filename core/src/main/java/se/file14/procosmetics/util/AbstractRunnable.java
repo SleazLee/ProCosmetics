@@ -1,5 +1,7 @@
 package se.file14.procosmetics.util;
 
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 
 public abstract class AbstractRunnable implements Runnable {
@@ -34,6 +36,16 @@ public abstract class AbstractRunnable implements Runnable {
     public Scheduler.Task runTaskTimerAsynchronously(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
         checkNotYetScheduled();
         return setupTask(Scheduler.runAsyncTimer(this, delay, period));
+    }
+
+    public Scheduler.Task runTaskTimer(Plugin plugin, Entity entity, long delay, long period) throws IllegalArgumentException, IllegalStateException {
+        checkNotYetScheduled();
+        return setupTask(Scheduler.runTimer(entity, this, delay, period));
+    }
+
+    public Scheduler.Task runTaskTimer(Plugin plugin, Location location, long delay, long period) throws IllegalArgumentException, IllegalStateException {
+        checkNotYetScheduled();
+        return setupTask(Scheduler.runTimer(location, this, delay, period));
     }
 
     private Scheduler.Task setupTask(Scheduler.Task task) {

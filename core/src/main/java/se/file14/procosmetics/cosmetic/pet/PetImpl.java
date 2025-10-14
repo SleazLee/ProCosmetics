@@ -39,7 +39,7 @@ public class PetImpl extends CosmeticImpl<PetType, PetBehavior> implements Pet {
     @Override
     protected void onEquip() {
         spawn();
-        runTaskTimer(plugin, 0L, 10L);
+        runTaskTimer(plugin, player, 0L, 10L);
     }
 
     @Override
