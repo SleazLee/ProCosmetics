@@ -76,7 +76,23 @@ public class EntityTrackerImpl extends AbstractRunnable implements EntityTracker
     @Override
     public void startTracking() {
         if (!isTracking()) {
-            runTaskTimer(PLUGIN, startDelay, updateInterval);
+            scheduleTask(() -> {
+                if (Scheduler.isFolia()) {
+                    Player currentOwner = owner;
+
+                    if (currentOwner != null) {
+                        return Scheduler.runTimer(currentOwner, this, startDelay, updateInterval);
+                    }
+
+                    Location trackingLocation = getTrackingLocation();
+
+                    if (trackingLocation != null) {
+                        return Scheduler.runTimer(trackingLocation, this, startDelay, updateInterval);
+                    }
+                }
+
+                return Scheduler.runTimer(this, startDelay, updateInterval);
+            });
         }
     }
 
@@ -278,12 +294,44 @@ public class EntityTrackerImpl extends AbstractRunnable implements EntityTracker
 
     @Override
     public void destroyAfter(int ticks) {
+        if (Scheduler.isFolia()) {
+            Player currentOwner = owner;
+
+            if (currentOwner != null) {
+                Scheduler.runLater(currentOwner, this::destroy, ticks);
+                return;
+            }
+
+            Location trackingLocation = getTrackingLocation();
+
+            if (trackingLocation != null) {
+                Scheduler.runLater(trackingLocation, this::destroy, ticks);
+                return;
+            }
+        }
+
         Scheduler.runLater(this::destroy, ticks);
     }
 
     @Override
     public void updateViewers() {
         // Force immediate update
+        if (Scheduler.isFolia()) {
+            Player currentOwner = owner;
+
+            if (currentOwner != null) {
+                Scheduler.run(currentOwner, this::run);
+                return;
+            }
+
+            Location trackingLocation = getTrackingLocation();
+
+            if (trackingLocation != null) {
+                Scheduler.run(trackingLocation, this::run);
+                return;
+            }
+        }
+
         run();
     }
 

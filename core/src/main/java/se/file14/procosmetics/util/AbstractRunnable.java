@@ -2,41 +2,42 @@ package se.file14.procosmetics.util;
 
 import org.bukkit.plugin.Plugin;
 
+import java.util.function.Supplier;
+
 public abstract class AbstractRunnable implements Runnable {
 
     private Scheduler.Task task;
 
     public Scheduler.Task runTask(Plugin plugin) throws IllegalArgumentException, IllegalStateException {
-        checkNotYetScheduled();
-        return setupTask(Scheduler.runLater(this, 0L));
+        return scheduleTask(() -> Scheduler.runLater(this, 0L));
     }
 
     public Scheduler.Task runTaskAsynchronously(Plugin plugin) throws IllegalArgumentException, IllegalStateException {
-        checkNotYetScheduled();
-        return setupTask(Scheduler.runAsyncLater(this, 0L));
+        return scheduleTask(() -> Scheduler.runAsyncLater(this, 0L));
     }
 
     public Scheduler.Task runTaskLater(Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
-        checkNotYetScheduled();
-        return setupTask(Scheduler.runLater(this, delay));
+        return scheduleTask(() -> Scheduler.runLater(this, delay));
     }
 
     public Scheduler.Task runTaskLaterAsynchronously(Plugin plugin, long delay) throws IllegalArgumentException, IllegalStateException {
-        checkNotYetScheduled();
-        return setupTask(Scheduler.runAsyncLater(this, delay));
+        return scheduleTask(() -> Scheduler.runAsyncLater(this, delay));
     }
 
     public Scheduler.Task runTaskTimer(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
-        checkNotYetScheduled();
-        return setupTask(Scheduler.runTimer(this, delay, period));
+        return scheduleTask(() -> Scheduler.runTimer(this, delay, period));
     }
 
     public Scheduler.Task runTaskTimerAsynchronously(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
-        checkNotYetScheduled();
-        return setupTask(Scheduler.runAsyncTimer(this, delay, period));
+        return scheduleTask(() -> Scheduler.runAsyncTimer(this, delay, period));
     }
 
-    private Scheduler.Task setupTask(Scheduler.Task task) {
+    protected Scheduler.Task scheduleTask(Supplier<Scheduler.Task> scheduler) {
+        checkNotYetScheduled();
+        return setupTask(scheduler.get());
+    }
+
+    protected Scheduler.Task setupTask(Scheduler.Task task) {
         if (task == null || task.isDummy()) {
             this.task = null;
         } else {
@@ -56,7 +57,7 @@ public abstract class AbstractRunnable implements Runnable {
         return task != null;
     }
 
-    private void checkNotYetScheduled() {
+    protected void checkNotYetScheduled() {
         if (task != null)
             throw new IllegalStateException("Already scheduled");
     }

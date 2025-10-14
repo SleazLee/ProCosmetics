@@ -7,6 +7,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import se.file14.procosmetics.ProCosmeticsPlugin;
 import se.file14.procosmetics.api.ProCosmetics;
@@ -119,6 +120,16 @@ public abstract class CosmeticImpl<T extends CosmeticType<T, B>,
             return;
         }
         onUpdate();
+    }
+
+    @Override
+    public Scheduler.Task runTaskTimer(Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
+        return scheduleTask(() -> {
+            if (Scheduler.isFolia() && player != null) {
+                return Scheduler.runTimer(player, this, delay, period);
+            }
+            return Scheduler.runTimer(this, delay, period);
+        });
     }
 
     @Override

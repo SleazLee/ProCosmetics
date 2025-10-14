@@ -118,7 +118,9 @@ public final class Scheduler {
      */
     public static Task runTimer(Runnable runnable, long delayTicks, long periodTicks) {
         if (foliaEnabled) {
-            return new Task(Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin(), task -> runnable.run(), Math.max(1L, delayTicks), periodTicks));
+            long initialDelay = Math.max(1L, delayTicks);
+            long period = Math.max(1L, periodTicks);
+            return new Task(Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin(), task -> runnable.run(), initialDelay, period));
         }
         return new Task(Bukkit.getScheduler().runTaskTimer(plugin(), runnable, delayTicks, periodTicks));
     }
@@ -196,6 +198,31 @@ public final class Scheduler {
     }
 
     /**
+     * Runs a task with a delay using an entity's scheduler when Folia is available.
+     *
+     * @param entity     the entity providing the scheduling context
+     * @param runnable   the task to run
+     * @param delayTicks the delay in ticks before running the task
+     * @return the scheduled task handle
+     */
+    public static Task runLater(Entity entity, Runnable runnable, long delayTicks) {
+        if (entity == null) {
+            return runLater(runnable, delayTicks);
+        }
+
+        if (delayTicks <= 0) {
+            run(entity, runnable);
+            return new Task(null);
+        }
+
+        if (foliaEnabled) {
+            return new Task(entity.getScheduler().runDelayed(plugin(), task -> runnable.run(), () -> runLater(runnable, delayTicks), delayTicks));
+        }
+
+        return new Task(Bukkit.getScheduler().runTaskLater(plugin(), runnable, delayTicks));
+    }
+
+    /**
      * Runs a task with a delay using a region-based scheduler.
      *
      * @param location   the location context for the task
@@ -226,8 +253,33 @@ public final class Scheduler {
      */
     public static Task runTimer(Location location, Runnable runnable, long delayTicks, long periodTicks) {
         if (foliaEnabled) {
-            return new Task(Bukkit.getRegionScheduler().runAtFixedRate(plugin(), location, task -> runnable.run(), Math.max(1L, delayTicks), periodTicks));
+            long initialDelay = Math.max(1L, delayTicks);
+            long period = Math.max(1L, periodTicks);
+            return new Task(Bukkit.getRegionScheduler().runAtFixedRate(plugin(), location, task -> runnable.run(), initialDelay, period));
         }
+        return new Task(Bukkit.getScheduler().runTaskTimer(plugin(), runnable, delayTicks, periodTicks));
+    }
+
+    /**
+     * Runs a repeating task using an entity's scheduler when Folia is available.
+     *
+     * @param entity      the entity providing the scheduling context
+     * @param runnable    the task to run
+     * @param delayTicks  the initial delay before the first run
+     * @param periodTicks the period between runs
+     * @return the scheduled task handle
+     */
+    public static Task runTimer(Entity entity, Runnable runnable, long delayTicks, long periodTicks) {
+        if (entity == null) {
+            return runTimer(runnable, delayTicks, periodTicks);
+        }
+
+        if (foliaEnabled) {
+            long initialDelay = Math.max(1L, delayTicks);
+            long period = Math.max(1L, periodTicks);
+            return new Task(entity.getScheduler().runAtFixedRate(plugin(), task -> runnable.run(), () -> runTimer(runnable, initialDelay, period), initialDelay, period));
+        }
+
         return new Task(Bukkit.getScheduler().runTaskTimer(plugin(), runnable, delayTicks, periodTicks));
     }
 
