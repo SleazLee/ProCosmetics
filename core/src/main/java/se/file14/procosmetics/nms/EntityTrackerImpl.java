@@ -76,14 +76,7 @@ public class EntityTrackerImpl extends AbstractRunnable implements EntityTracker
     @Override
     public void startTracking() {
         if (!isTracking()) {
-            if (Scheduler.isFolia()) {
-                Location trackingLocation = getTrackingLocation();
-                if (trackingLocation != null && trackingLocation.getWorld() != null) {
-                    runTaskTimer(PLUGIN, trackingLocation, Math.max(1L, startDelay), Math.max(1L, updateInterval));
-                    return;
-                }
-            }
-            runTaskTimer(PLUGIN, Math.max(0L, startDelay), Math.max(1L, updateInterval));
+            runTaskTimer(PLUGIN, startDelay, updateInterval);
         }
     }
 

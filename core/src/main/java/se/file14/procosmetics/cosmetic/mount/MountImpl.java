@@ -53,7 +53,7 @@ public class MountImpl extends CosmeticImpl<MountType, MountBehavior> implements
         if (rideOnSpawn && entity.getPassengers().contains(player)) {
             entity.addPassenger(player);
         }
-        runTaskTimer(plugin, player, 0L, 1L);
+        runTaskTimer(plugin, 0L, 1L);
     }
 
     @Override

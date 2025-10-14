@@ -29,7 +29,7 @@ public abstract class AbstractNMSEquipment<T> extends AbstractRunnable {
         uuid = player.getUniqueId();
         id = player.getEntityId();
         if (tracker) {
-            runTaskTimer(PLUGIN, player, 2L, 60L);
+            runTaskTimer(PLUGIN, 2L, 60L);
         }
     }
 

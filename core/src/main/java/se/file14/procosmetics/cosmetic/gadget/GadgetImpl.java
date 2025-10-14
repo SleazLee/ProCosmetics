@@ -69,7 +69,7 @@ public class GadgetImpl extends CosmeticImpl<GadgetType, GadgetBehavior> impleme
     @Override
     public void onEquip() {
         setGadgetItemInInventory();
-        runTaskTimer(plugin, player, 0L, 1L);
+        runTaskTimer(plugin, 0L, 1L);
     }
 
     @Override

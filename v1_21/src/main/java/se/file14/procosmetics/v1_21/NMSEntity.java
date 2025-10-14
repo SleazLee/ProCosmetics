@@ -50,7 +50,6 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
     private static final List<Pose> POSES = List.of(Pose.values());
 
     private static Constructor<FallingBlockEntity> fallingBlockConstructor;
-    private static final Method CRAFT_BLOCKDATA_GET_STATE = resolveCraftBlockDataStateAccessor();
     private static final Method CRAFT_CHAT_MESSAGE_FROM_STRING_OR_NULL = resolveCraftChatMessageConverter();
     private static final Method CRAFT_ITEM_STACK_AS_NMS_COPY = resolveCraftItemStackConverter();
     private static final List<Method> BUKKIT_ENTITY_ACCESSORS = resolveBukkitEntityAccessors();
@@ -71,10 +70,9 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
                 fallingBlockConstructor = FallingBlockEntity.class.getDeclaredConstructor(Level.class, double.class, double.class, double.class, BlockState.class);
                 fallingBlockConstructor.setAccessible(true);
             }
-            BlockState blockState = toBlockState(blockData);
-            entity = fallingBlockConstructor.newInstance((Level) ReflectionUtil.getHandle(world), 0.0d, 0.0d, 0.0d, blockState);
+            entity = fallingBlockConstructor.newInstance((Level) ReflectionUtil.getHandle(world), 0.0d, 0.0d, 0.0d, ((org.bukkit.craftbukkit.block.data.CraftBlockData) blockData).getState());
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException | IllegalStateException e) {
+                 InvocationTargetException e) {
             e.printStackTrace();
         }
     }
@@ -766,29 +764,6 @@ public class NMSEntity extends NMSEntityImpl<Packet<? super ClientGamePacketList
             return ReflectionUtil.getMethod(craftItemStackClass, "asNMSCopy", ItemStack.class);
         }
         return null;
-    }
-
-    @Nullable
-    private static Method resolveCraftBlockDataStateAccessor() {
-        Class<?> craftBlockData = ReflectionUtil.getBukkitClass("block.data.CraftBlockData");
-
-        if (craftBlockData == null) {
-            return null;
-        }
-        try {
-            Method method = craftBlockData.getDeclaredMethod("getState");
-            method.setAccessible(true);
-            return method;
-        } catch (NoSuchMethodException exception) {
-            return null;
-        }
-    }
-
-    private static BlockState toBlockState(BlockData blockData) throws InvocationTargetException, IllegalAccessException {
-        if (CRAFT_BLOCKDATA_GET_STATE == null) {
-            throw new IllegalStateException("CraftBlockData#getState accessor is unavailable.");
-        }
-        return (BlockState) CRAFT_BLOCKDATA_GET_STATE.invoke(blockData);
     }
 
     private static List<Method> resolveBukkitEntityAccessors() {

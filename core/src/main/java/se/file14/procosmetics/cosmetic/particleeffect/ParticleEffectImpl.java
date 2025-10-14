@@ -20,7 +20,7 @@ public class ParticleEffectImpl extends CosmeticImpl<ParticleEffectType, Particl
 
     @Override
     protected void onEquip() {
-        runTaskTimer(plugin, player, 0L, cosmeticType.getRepeatDelay());
+        runTaskTimer(plugin, 0L, cosmeticType.getRepeatDelay());
     }
 
     @Override
