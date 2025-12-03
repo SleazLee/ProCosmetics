@@ -2,10 +2,6 @@ plugins {
     id("io.papermc.paperweight.userdev") version "1.7.2"
 }
 
-configurations.named("paperweightDevelopmentBundle") {
-    attributes.attribute(org.gradle.api.attributes.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, org.gradle.api.attributes.ArtifactTypeDefinition.ZIP_TYPE)
-}
-
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
     paperweight.paperDevBundle("1.20.6-R0.1-SNAPSHOT")
