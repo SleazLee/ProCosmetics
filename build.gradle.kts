@@ -70,7 +70,15 @@ subprojects {
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
 
         // Paper
-        maven("https://repo.papermc.io/repository/maven-public/")
+        maven("https://repo.papermc.io/repository/maven-public/") {
+            // Avoid resolving Gradle module metadata which can introduce duplicate
+            // artifacts for dev bundle configurations; fall back to the POM instead.
+            metadataSources {
+                mavenPom()
+                artifact()
+                ignoreGradleMetadataRedirection()
+            }
+        }
 
         // Plugins
         maven("https://jitpack.io")
@@ -101,7 +109,7 @@ subprojects {
             endWithNewline()
             removeUnusedImports()
             //palantirJavaFormat("2.81.0").style("GOOGLE").formatJavadoc(true)
-            licenseHeaderFile(rootProject.file("/config/spotless/license-header.txt"), "package ")
+            licenseHeaderFile(rootProject.file("config/spotless/license-header.txt"), "package ")
         }
     }
 
