@@ -34,6 +34,7 @@ import se.file14.procosmetics.ProCosmeticsPlugin;
 import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.api.user.UserManager;
 import se.file14.procosmetics.util.AbstractRunnable;
+import se.file14.procosmetics.util.Scheduler;
 
 import java.util.Collection;
 import java.util.Locale;
@@ -65,7 +66,7 @@ public class UserManagerImpl implements UserManager {
 
     public void registerListeners() {
         plugin.getServer().getPluginManager().registerEvents(new Listeners(), plugin);
-        plugin.getServer().getScheduler().runTaskTimer(plugin, new MovementRunnable(), 1L, 1L);
+        Scheduler.runTimer(new MovementRunnable()::run, 1L, 1L);
     }
 
     public void loadOnlinePlayers() {

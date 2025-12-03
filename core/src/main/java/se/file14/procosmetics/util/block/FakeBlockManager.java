@@ -26,6 +26,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import se.file14.procosmetics.ProCosmeticsPlugin;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 public class FakeBlockManager {
 
@@ -47,7 +48,7 @@ public class FakeBlockManager {
         setFakeBlock(block, itemStack);
 
         if (duration > 0) {
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> resetBlock(block), duration * 20L);
+            Scheduler.runLater(() -> resetBlock(block), duration * 20L);
         }
         return true;
     }

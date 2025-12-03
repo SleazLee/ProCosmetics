@@ -30,6 +30,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.api.util.structure.type.BlockDisplayStructure;
 import se.file14.procosmetics.util.MathUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.structure.type.BlockDisplayStructureImpl;
 
 import java.util.HashSet;
@@ -68,10 +69,7 @@ public class Shower implements GadgetBehavior {
                 waterDripLocations.add(shower.clone().add(2.0d * i * offset - offset, DRIP_HEIGHT, 2.0d * k * offset - offset));
             }
         }
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationTicks()
-        );
+        Scheduler.runLater(center.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 

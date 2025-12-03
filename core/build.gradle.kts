@@ -3,6 +3,9 @@ dependencies {
     compileOnly("org.spigotmc:spigot:1.21.10-R0.1-SNAPSHOT")
     compileOnly("org.spigotmc:spigot-api:1.21.10-R0.1-SNAPSHOT")
 
+    // Folia API
+    compileOnly("dev.folia:folia-api:1.20.6-R0.1-SNAPSHOT")
+
     // Project dependencies
     implementation(project(":api"))
 

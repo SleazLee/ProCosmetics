@@ -33,6 +33,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 import java.util.HashSet;
 import java.util.List;
@@ -67,7 +68,7 @@ public class ExplosiveSheep implements GadgetBehavior {
             MetadataUtil.setCustomEntity(entity);
         });
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(), () -> {
+        Scheduler.runLater(location.clone(), () -> {
             if (sheep == null) {
                 return;
             }
@@ -94,10 +95,7 @@ public class ExplosiveSheep implements GadgetBehavior {
             }
         }, Long.max(0L, context.getType().getDurationTicks() - 80L));
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationTicks()
-        );
+        Scheduler.runLater(location.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 

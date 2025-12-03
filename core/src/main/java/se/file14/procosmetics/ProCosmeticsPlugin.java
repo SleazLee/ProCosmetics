@@ -38,6 +38,7 @@ import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.command.CommandBase;
 import se.file14.procosmetics.command.SimpleCommand;
 import se.file14.procosmetics.command.commands.*;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.config.ConfigManagerImpl;
 import se.file14.procosmetics.cosmetic.registry.CategoryRegistriesImpl;
 import se.file14.procosmetics.cosmetic.registry.CosmeticRarityRegistryImpl;
@@ -101,8 +102,8 @@ public class ProCosmeticsPlugin extends JavaPlugin implements ProCosmetics {
     public void onLoad() {
         ProCosmeticsPlugin.plugin = this;
         logger = getLogger();
-        syncExecutor = runnable -> getServer().getScheduler().runTask(this, runnable);
-        ayncExecutor = runnable -> getServer().getScheduler().runTaskAsynchronously(this, runnable);
+        syncExecutor = Scheduler::run;
+        ayncExecutor = Scheduler::runAsync;
 
         if (!VersionUtil.isSupported()) {
             LogUtil.printUnsupported();

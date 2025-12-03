@@ -20,6 +20,7 @@ package se.file14.procosmetics.economy;
 import se.file14.procosmetics.ProCosmeticsPlugin;
 import se.file14.procosmetics.api.economy.EconomyManager;
 import se.file14.procosmetics.api.economy.EconomyProvider;
+import se.file14.procosmetics.util.Scheduler;
 
 import java.util.logging.Level;
 
@@ -69,7 +70,7 @@ public class EconomyManagerImpl implements EconomyManager {
             economy.hook(plugin);
         } catch (IllegalStateException e) {
             if (attempt < MAX_ATTEMPTS) {
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> hook(attempt + 1), 10L);
+                Scheduler.runLater(() -> hook(attempt + 1), 10L);
             } else {
                 plugin.getLogger().log(Level.WARNING, "Failed to hook into " + economy.getPlugin() + ". Using built-in economy system as fallback.");
                 economy = EconomyType.BUILT_IN.create(plugin);

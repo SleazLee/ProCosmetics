@@ -30,7 +30,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.joml.Matrix4f;
 import se.file14.procosmetics.api.ProCosmetics;
@@ -49,13 +48,16 @@ import se.file14.procosmetics.api.util.structure.type.BlockStructure;
 import se.file14.procosmetics.util.LocationUtil;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.structure.type.BlockStructureImpl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-public abstract class TreasureChestAnimationImpl extends BukkitRunnable implements TreasureChestAnimation, Listener {
+import se.file14.procosmetics.util.AbstractRunnable;
+
+public abstract class TreasureChestAnimationImpl extends AbstractRunnable implements TreasureChestAnimation, Listener {
 
     private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.legacySection();
     private static final Title.Times DEFAULT_TIMES = Title.Times.times(Ticks.duration(5), Ticks.duration(50), Ticks.duration(5));
@@ -157,7 +159,7 @@ public abstract class TreasureChestAnimationImpl extends BukkitRunnable implemen
         openedChests.add(location.clone());
 
         if (openedChests.size() >= treasureChest.getChestsToOpen()) {
-            plugin.getJavaPlugin().getServer().getScheduler().runTaskLater(plugin.getJavaPlugin(), this::reset, 100L);
+            Scheduler.runLater(this::reset, 100L);
         }
     }
 
@@ -223,7 +225,7 @@ public abstract class TreasureChestAnimationImpl extends BukkitRunnable implemen
 
     private void spawnFirework(Location location, CosmeticRarity rarity) {
         if (rarity.getDetonations() > 0) {
-            new BukkitRunnable() {
+        new AbstractRunnable() {
                 int i;
 
                 @Override
