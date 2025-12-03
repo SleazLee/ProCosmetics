@@ -28,6 +28,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.ProCosmeticsPlugin;
 import se.file14.procosmetics.api.cosmetic.morph.Morph;
 import se.file14.procosmetics.api.cosmetic.morph.MorphBehavior;
@@ -170,7 +171,7 @@ public class MorphImpl extends CosmeticImpl<MorphType, MorphBehavior> implements
 
     protected void addCooldown(double time) {
         cooldown = true;
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        Scheduler.runLater(location, () -> {
             if (isEquipped()) {
                 user.sendActionBar(user.translate(
                         "cosmetic.morphs.ability.cooldown.ready",

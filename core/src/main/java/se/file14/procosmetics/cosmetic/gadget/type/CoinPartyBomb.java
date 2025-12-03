@@ -41,6 +41,7 @@ import se.file14.procosmetics.api.user.User;
 import se.file14.procosmetics.util.FastMathUtil;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.item.ItemBuilderImpl;
 
 import org.jetbrains.annotations.Nullable;
@@ -114,13 +115,12 @@ public class CoinPartyBomb implements GadgetBehavior, Listener {
         nmsEntity.setPositionRotation(center);
         nmsEntity.getTracker().startTracking();
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(), () -> {
+        Scheduler.runLater(context.getPlayer().getLocation(), () -> {
             tick = 0;
             despawnBlock();
         }, context.getType().getDurationTicks());
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> {
+        Scheduler.runLater(context.getPlayer().getLocation(), () -> {
                     // Make sure it's not running (the player could have started another one)
                     if (tick == 0) {
                         onUnequip(context);

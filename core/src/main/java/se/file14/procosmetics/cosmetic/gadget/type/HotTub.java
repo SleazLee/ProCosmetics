@@ -33,6 +33,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.api.util.structure.type.BlockStructure;
 import se.file14.procosmetics.util.MathUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.structure.type.BlockStructureImpl;
 
 import org.jetbrains.annotations.Nullable;
@@ -71,10 +72,7 @@ public class HotTub implements GadgetBehavior, Listener {
         }
         shower = center.clone().add(MathUtil.rotateAroundAxisY(new Vector(0.0d, 0.0d, 5.0d), angle));
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationTicks()
-        );
+        Scheduler.runLater(center.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 

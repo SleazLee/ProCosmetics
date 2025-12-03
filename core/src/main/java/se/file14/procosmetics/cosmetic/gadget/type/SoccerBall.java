@@ -31,6 +31,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 public class SoccerBall implements GadgetBehavior {
 
@@ -66,10 +67,7 @@ public class SoccerBall implements GadgetBehavior {
         ballVector.zero();
         slimeBall = ball;
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationTicks()
-        );
+        Scheduler.runLater(location.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 

@@ -31,6 +31,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -61,10 +62,7 @@ public class BatBlaster implements GadgetBehavior {
         for (int i = 0; i < BAT_AMOUNT; i++) {
             bats.add(location.getWorld().spawn(location, Bat.class, MetadataUtil::setCustomEntity));
         }
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationTicks()
-        );
+        Scheduler.runLater(context.getPlayer().getLocation(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 

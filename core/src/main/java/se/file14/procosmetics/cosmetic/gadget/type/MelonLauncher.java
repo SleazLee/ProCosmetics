@@ -35,6 +35,7 @@ import se.file14.procosmetics.api.cosmetic.gadget.GadgetBehavior;
 import se.file14.procosmetics.api.cosmetic.gadget.GadgetType;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.item.ItemBuilderImpl;
 
 import java.util.ArrayList;
@@ -109,10 +110,7 @@ public class MelonLauncher implements GadgetBehavior, Listener {
             }
             despawn();
 
-            context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                    () -> despawnSlices(items),
-                    SLICES_DESPAWN
-            );
+            Scheduler.runLater(location, () -> despawnSlices(items), SLICES_DESPAWN);
         } else {
             if (item.getTicksLived() > THROWN_ITEM_DESPAWN) {
                 despawn();

@@ -38,6 +38,7 @@ import se.file14.procosmetics.util.FastMathUtil;
 import se.file14.procosmetics.util.LocationUtil;
 import se.file14.procosmetics.util.MathUtil;
 import se.file14.procosmetics.util.MetadataUtil;
+import se.file14.procosmetics.util.Scheduler;
 import se.file14.procosmetics.util.structure.type.BlockDisplayStructureImpl;
 
 public class Swing implements GadgetBehavior, Listener {
@@ -97,10 +98,7 @@ public class Swing implements GadgetBehavior, Listener {
         }
         tracker.startTracking();
 
-        context.getPlugin().getJavaPlugin().getServer().getScheduler().runTaskLater(context.getPlugin().getJavaPlugin(),
-                () -> onUnequip(context),
-                context.getType().getDurationTicks()
-        );
+        Scheduler.runLater(center.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 
