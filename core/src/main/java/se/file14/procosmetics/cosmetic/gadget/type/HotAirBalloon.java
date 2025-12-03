@@ -73,7 +73,7 @@ public class HotAirBalloon implements GadgetBehavior {
 
         context.getUser().setFallDamageProtection((int) context.getType().getDuration());
 
-        Scheduler.runLater(location, () -> onUnequip(context), context.getType().getDurationTicks());
+        Scheduler.runLater(seatLocation.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         context.getUser().setFallDamageProtection((int) (context.getType().getDuration() + 6));
         speed = 0.0d;
         return InteractionResult.success();

@@ -17,8 +17,8 @@ repositories {
 }
 
 dependencies {
-    // Spigot API
-    compileOnly("org.spigotmc:spigot-api:1.21.10-R0.1-SNAPSHOT")
+    // Paper API (provides Bukkit/Folia classes)
+    compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
 
     compileOnly("net.kyori:adventure-api:4.25.0")
     compileOnly("net.kyori:adventure-text-minimessage:4.25.0")
