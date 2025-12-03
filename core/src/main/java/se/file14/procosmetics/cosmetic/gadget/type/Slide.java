@@ -75,7 +75,7 @@ public class Slide implements GadgetBehavior, Listener {
                 break;
             }
         }
-        Scheduler.runLater(location.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
+        Scheduler.runLater(center.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 

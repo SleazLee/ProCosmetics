@@ -66,7 +66,7 @@ public class DiscoBall implements GadgetBehavior {
         nmsEntity.setPositionRotation(location.add(0.0d, HEIGHT_OFFSET, 0.0d));
         nmsEntity.getTracker().startTracking();
 
-        Scheduler.runLater(center.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
+        Scheduler.runLater(location.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 

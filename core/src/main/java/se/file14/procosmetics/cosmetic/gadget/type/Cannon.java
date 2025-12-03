@@ -61,7 +61,7 @@ public class Cannon implements GadgetBehavior {
         shootLocation = center.clone().add(MathUtil.rotateAroundAxisY(new Vector(0.0d, 1.0d, 4.6d), angle));
         shootLocation.add(0.0, PARTICLE_OFFSET, 0.0d);
 
-        Scheduler.runLater(location.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
+        Scheduler.runLater(center.clone(), () -> onUnequip(context), context.getType().getDurationTicks());
         return InteractionResult.success();
     }
 
